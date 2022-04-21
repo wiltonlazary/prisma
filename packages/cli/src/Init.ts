@@ -1,52 +1,54 @@
+import type { ConnectorType } from '@prisma/generator-helper'
+import type { Command } from '@prisma/sdk'
 import {
   arg,
   canConnectToDatabase,
-  Command,
   format,
   getCommandWithExecutor,
   HelpError,
   link,
   logger,
+  protocolToConnectorType,
 } from '@prisma/sdk'
-import { protocolToConnectorType } from '@prisma/sdk/dist/convertCredentials'
-import { ConnectorType } from '@prisma/generator-helper'
 import chalk from 'chalk'
 import dotenv from 'dotenv'
 import fs from 'fs'
 import path from 'path'
+import { match, P } from 'ts-pattern'
 import { isError } from 'util'
+
 import { printError } from './utils/prompt/utils/print'
 
 export const defaultSchema = (provider: ConnectorType = 'postgresql') => {
   // add preview flag
-  if (provider === 'mongodb') {
+  if (provider === 'cockroachdb') {
     return `// This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-datasource db {
-  provider = "${provider}"
-  url      = env("DATABASE_URL")
-}
 
 generator client {
   provider        = "prisma-client-js"
-  previewFeatures = ["mongoDb"]
+  previewFeatures = ["${provider}"]
 }
-`
-  } else {
-    return `// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
   provider = "${provider}"
   url      = env("DATABASE_URL")
 }
+`
+  }
+
+  return `// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
+
+datasource db {
+  provider = "${provider}"
+  url      = env("DATABASE_URL")
+}
 `
-  }
 }
 
 export const defaultEnv = (
@@ -55,9 +57,9 @@ export const defaultEnv = (
 ) => {
   let env = comments
     ? `# Environment variables declared in this file are automatically made available to Prisma.
-# See the documentation for more detail: https://pris.ly/d/prisma-schema#using-environment-variables
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
 
-# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server (Preview) and MongoDB (Preview).
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB (Preview).
 # See the documentation for all the connection string options: https://pris.ly/d/connection-strings\n\n`
     : ''
   env += `DATABASE_URL="${url}"`
@@ -74,23 +76,25 @@ export const defaultPort = (provider: ConnectorType) => {
       return 27017
     case 'postgresql':
       return 5432
+    case 'cockroachdb':
+      return 26257
   }
 
   return undefined
 }
 
-export const defaultURL = (
-  provider: ConnectorType,
-  port = defaultPort(provider),
-  schema = 'public',
-) => {
+export const defaultURL = (provider: ConnectorType, port = defaultPort(provider), schema = 'public') => {
   switch (provider) {
     case 'postgresql':
+      return `postgresql://johndoe:randompassword@localhost:${port}/mydb?schema=${schema}`
+    case 'cockroachdb':
       return `postgresql://johndoe:randompassword@localhost:${port}/mydb?schema=${schema}`
     case 'mysql':
       return `mysql://johndoe:randompassword@localhost:${port}/mydb`
     case 'sqlserver':
       return `sqlserver://localhost:${port};database=mydb;user=SA;password=randompassword;`
+    case 'jdbc:sqlserver':
+      return `jdbc:sqlserver://localhost:${port};database=mydb;user=SA;password=randompassword;`
     case 'mongodb':
       return `mongodb+srv://root:randompassword@cluster0.ab1cd.mongodb.net/mydb?retryWrites=true&w=majority`
     case 'sqlite':
@@ -119,7 +123,7 @@ export class Init implements Command {
   ${chalk.bold('Options')}
     
              -h, --help   Display this help message
-  --datasource-provider   Define the datasource provider to use: PostgreSQL, MySQL, SQLite, SQLServer (Preview) or MongoDB (Preview)
+  --datasource-provider   Define the datasource provider to use: PostgreSQL, MySQL, SQLite, SQL Server or MongoDB
                   --url   Define a custom datasource url
 
   ${chalk.bold('Examples')}
@@ -131,9 +135,7 @@ export class Init implements Command {
     ${chalk.dim('$')} prisma init --datasource-provider mysql
   
   Setup a new Prisma project and specify the url that will be used
-    ${chalk.dim(
-      '$',
-    )} prisma init --url mysql://user:password@localhost:3306/mydb
+    ${chalk.dim('$')} prisma init --url mysql://user:password@localhost:3306/mydb
   `)
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -163,9 +165,7 @@ export class Init implements Command {
 
     if (fs.existsSync(path.join(outputDir, 'schema.prisma'))) {
       console.log(
-        printError(`File ${chalk.bold(
-          'schema.prisma',
-        )} already exists in your project.
+        printError(`File ${chalk.bold('schema.prisma')} already exists in your project.
         Please try again in a project that is not yet using Prisma.
       `),
       )
@@ -174,9 +174,7 @@ export class Init implements Command {
 
     if (fs.existsSync(prismaFolder)) {
       console.log(
-        printError(`A folder called ${chalk.bold(
-          'prisma',
-        )} already exists in your project.
+        printError(`A folder called ${chalk.bold('prisma')} already exists in your project.
         Please try again in a project that is not yet using Prisma.
       `),
       )
@@ -185,52 +183,58 @@ export class Init implements Command {
 
     if (fs.existsSync(path.join(prismaFolder, 'schema.prisma'))) {
       console.log(
-        printError(`File ${chalk.bold(
-          'prisma/schema.prisma',
-        )} already exists in your project.
+        printError(`File ${chalk.bold('prisma/schema.prisma')} already exists in your project.
         Please try again in a project that is not yet using Prisma.
       `),
       )
       process.exit(1)
     }
 
-    let provider: ConnectorType
-    let url: string | undefined
-
-    if (args['--url']) {
-      const canConnect = await canConnectToDatabase(args['--url'])
-      if (canConnect !== true) {
-        const { code, message } = canConnect
-
-        // P1003 means that the db doesn't exist but we can connect
-        if (code !== 'P1003') {
-          if (code) {
-            throw new Error(`${code}: ${message}`)
-          } else {
-            throw new Error(message)
+    const { provider, url } = await match(args)
+      .with(
+        {
+          '--datasource-provider': P.when((provider): provider is string => Boolean(provider)),
+        },
+        (input) => {
+          const providerLowercase = input['--datasource-provider'].toLowerCase()
+          if (!['postgresql', 'mysql', 'sqlserver', 'sqlite', 'mongodb', 'cockroachdb'].includes(providerLowercase)) {
+            throw new Error(
+              `Provider "${args['--datasource-provider']}" is invalid or not supported. Try again with "postgresql", "mysql", "sqlite", "sqlserver", "mongodb" or "cockroachdb".`,
+            )
           }
-        }
-      }
+          const provider = providerLowercase as ConnectorType
+          const url = defaultURL(provider)
+          return Promise.resolve({ provider, url })
+        },
+      )
+      .with(
+        {
+          '--url': P.when((url): url is string => Boolean(url)),
+        },
+        async (input) => {
+          const url = input['--url']
+          const canConnect = await canConnectToDatabase(url)
+          if (canConnect !== true) {
+            const { code, message } = canConnect
 
-      provider = protocolToConnectorType(`${args['--url'].split(':')[0]}:`)
-      url = args['--url']
-    } else if (args['--datasource-provider']) {
-      const providerLowercase = args['--datasource-provider'].toLowerCase()
-      if (
-        !['postgresql', 'mysql', 'sqlserver', 'sqlite', 'mongodb'].includes(
-          providerLowercase,
-        )
-      ) {
-        throw new Error(
-          `Provider "${args['--datasource-provider']}" is invalid or not supported. Try again with "postgresql", "mysql", "sqlite", "sqlserver" or "mongodb".`,
-        )
-      }
-      provider = providerLowercase as ConnectorType
-      url = defaultURL(provider)
-    } else {
-      // Default to PostgreSQL
-      provider = 'postgresql'
-    }
+            // P1003 means that the db doesn't exist but we can connect
+            if (code !== 'P1003') {
+              if (code) {
+                throw new Error(`${code}: ${message}`)
+              } else {
+                throw new Error(message)
+              }
+            }
+          }
+
+          const provider = protocolToConnectorType(`${url.split(':')[0]}:`)
+          return { provider, url }
+        },
+      )
+      .otherwise(() => {
+        // Default to PostgreSQL
+        return Promise.resolve({ provider: 'postgresql' as ConnectorType, url: undefined })
+      })
 
     /**
      * Validation successful? Let's create everything!
@@ -244,12 +248,9 @@ export class Init implements Command {
       fs.mkdirSync(prismaFolder)
     }
 
-    fs.writeFileSync(
-      path.join(prismaFolder, 'schema.prisma'),
-      defaultSchema(provider),
-    )
+    fs.writeFileSync(path.join(prismaFolder, 'schema.prisma'), defaultSchema(provider))
 
-    let warning
+    const warnings: string[] = []
     const envPath = path.join(outputDir, '.env')
     if (!fs.existsSync(envPath)) {
       fs.writeFileSync(envPath, defaultEnv(url))
@@ -257,24 +258,29 @@ export class Init implements Command {
       const envFile = fs.readFileSync(envPath, { encoding: 'utf8' })
       const config = dotenv.parse(envFile) // will return an object
       if (Object.keys(config).includes('DATABASE_URL')) {
-        warning = `${chalk.yellow('warn')} Prisma would have added ${defaultEnv(
-          url,
-          false,
-        )} but this environment variable already exists in ${chalk.bold(
-          path.relative(outputDir, envPath),
-        )}`
-      } else {
-        fs.appendFileSync(
-          envPath,
-          `\n\n` + '# This was inserted by `prisma init`:\n' + defaultEnv(url),
+        warnings.push(
+          `${chalk.yellow('warn')} Prisma would have added DATABASE_URL but it already exists in ${chalk.bold(
+            path.relative(outputDir, envPath),
+          )}`,
         )
+      } else {
+        fs.appendFileSync(envPath, `\n\n` + '# This was inserted by `prisma init`:\n' + defaultEnv(url))
       }
     }
 
+    const gitignorePath = path.join(outputDir, '.gitignore')
     try {
-      fs.writeFileSync(path.join(outputDir, '.gitignore'), defaultGitIgnore())
-    } catch (error) {
-      console.error('Failed to write .gitignore file, reason: ', error)
+      fs.writeFileSync(gitignorePath, defaultGitIgnore(), { flag: 'wx' })
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === 'EEXIST') {
+        warnings.push(
+          `${chalk.yellow(
+            'warn',
+          )} You already have a .gitignore. Don't forget to exclude .env to not commit any secret.`,
+        )
+      } else {
+        console.error('Failed to write .gitignore file, reason: ', e)
+      }
     }
 
     const steps: string[] = []
@@ -298,15 +304,11 @@ export class Init implements Command {
     if (!url || args['--datasource-provider']) {
       if (!args['--datasource-provider']) {
         steps.unshift(
-          `Set the ${chalk.green('provider')} of the ${chalk.green(
-            'datasource',
-          )} block in ${chalk.green(
+          `Set the ${chalk.green('provider')} of the ${chalk.green('datasource')} block in ${chalk.green(
             'schema.prisma',
-          )} to match your database: ${chalk.green(
-            'postgresql',
-          )}, ${chalk.green('mysql')}, ${chalk.green('sqlite')}, ${chalk.green(
-            'sqlserver',
-          )} (Preview) or ${chalk.green('mongodb')} (Preview).`,
+          )} to match your database: ${chalk.green('postgresql')}, ${chalk.green('mysql')}, ${chalk.green(
+            'sqlite',
+          )}, ${chalk.green('sqlserver')}, ${chalk.green('mongodb')} or ${chalk.green('cockroachdb')} (Preview).`,
         )
       }
 
@@ -320,7 +322,7 @@ export class Init implements Command {
     return `
 ✔ Your Prisma schema was created at ${chalk.green('prisma/schema.prisma')}
   You can now open it in your favorite editor.
-${warning && logger.should.warn ? '\n' + warning + '\n' : ''}
+${warnings.length > 0 && logger.should.warn ? `\n${warnings.join('\n')}\n` : ''}
 Next steps:
 ${steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 

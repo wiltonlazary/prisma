@@ -1,8 +1,10 @@
-import stripAnsi from 'strip-ansi'
 import chalk from 'chalk'
+import stripAnsi from 'strip-ansi'
+
 import { enums } from '../fixtures/enums'
-import { DMMFClass, makeDocument, transformDocument } from '../runtime'
 import { getDMMF } from '../generation/getDMMF'
+import { DMMFClass, makeDocument, transformDocument } from '../runtime'
+
 chalk.level = 0
 
 describe('scalar where transformation', () => {
@@ -359,9 +361,7 @@ describe('scalar where transformation', () => {
       }
     `)
 
-    expect(document.validate(select, false, 'tests')).toMatchInlineSnapshot(
-      `undefined`,
-    )
+    expect(document.validate(select, false, 'tests')).toMatchInlineSnapshot(`undefined`)
   })
 
   test('validate uuid scalar filter should error when invalid input', () => {
@@ -392,9 +392,7 @@ describe('scalar where transformation', () => {
     `)
 
     try {
-      expect(document.validate(select, false, 'tests')).toMatchInlineSnapshot(
-        `undefined`,
-      )
+      expect(document.validate(select, false, 'tests')).toMatchInlineSnapshot(`undefined`)
     } catch (e) {
       expect(stripAnsi(e.message)).toMatchInlineSnapshot(`
         "

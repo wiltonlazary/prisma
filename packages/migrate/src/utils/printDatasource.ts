@@ -1,6 +1,11 @@
-import { getDbInfo } from '../utils/ensureDatabaseExists'
 import chalk from 'chalk'
 
+import { getDbInfo } from '../utils/ensureDatabaseExists'
+
+// Datasource "db": SQLite database "dev.db" at "file:./dev.db"
+// Datasource "my_db": PostgreSQL database "tests-migrate", schema "public" at "localhost:5432"
+// Datasource "my_db": MySQL database "tests-migrate" at "localhost:5432"
+// Datasource "my_db" - SQL Server
 export async function printDatasource(schemaPath: string): Promise<void> {
   const dbInfo = await getDbInfo(schemaPath)
 
@@ -14,15 +19,15 @@ export async function printDatasource(schemaPath: string): Promise<void> {
     } else {
       console.info(
         chalk.dim(
-          `Datasource "${dbInfo.name}": ${dbInfo.dbType} ${
-            dbInfo.schemaWord
-          } "${dbInfo.dbName}"${
+          `Datasource "${dbInfo.name}": ${dbInfo.dbType} ${dbInfo.schemaWord} "${dbInfo.dbName}"${
             dbInfo.schema ? `, schema "${dbInfo.schema}"` : ''
           } at "${dbInfo.dbLocation}"`,
         ),
       )
     }
-  } else {
+  } else if (dbInfo.name) {
     console.info(chalk.dim(`Datasource "${dbInfo.name}"`))
+  } else {
+    // Nothing
   }
 }

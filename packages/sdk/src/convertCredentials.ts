@@ -1,13 +1,21 @@
-import { DatabaseCredentials } from './types'
-import * as NodeURL from 'url'
-import { ConnectorType } from '@prisma/generator-helper'
+import type { ConnectorType } from '@prisma/generator-helper'
 import path from 'path'
+import * as NodeURL from 'url'
 
+import type { DatabaseCredentials } from './types'
+
+// opposite of uriToCredentials
+// only used for internal tests
 export function credentialsToUri(credentials: DatabaseCredentials): string {
   const type = databaseTypeToProtocol(credentials.type)
   if (credentials.type === 'mongodb') {
     return credentials.uri!
+  } else if (credentials.type === 'sqlite') {
+    // if `file:../parent-dev.db` return as it is
+    return credentials.uri!
   }
+
+  // construct URL object with protocol
   const url = new NodeURL.URL(type + '//')
 
   if (credentials.host) {
@@ -27,6 +35,8 @@ export function credentialsToUri(credentials: DatabaseCredentials): string {
       url.host = credentials.socket
     }
   } else if (credentials.type === 'mysql') {
+    // why `credentials.schema` in mysql here? doesn't exist for mysql
+    // try removing it and see how the tests react
     url.pathname = '/' + (credentials.database || credentials.schema || '')
     if (credentials.socket) {
       url.searchParams.set('socket', credentials.socket)
@@ -34,6 +44,7 @@ export function credentialsToUri(credentials: DatabaseCredentials): string {
   }
 
   if (credentials.ssl) {
+    // don't understand why hardcoding prefer? we should put the value here?
     url.searchParams.set('sslmode', 'prefer')
   }
 
@@ -62,17 +73,13 @@ export function credentialsToUri(credentials: DatabaseCredentials): string {
     url.pathname = ''
   }
 
-  if (credentials.type === 'sqlite') {
-    // if `file:../parent-dev.db` return as it is
-    return credentials.uri!
-  }
-
   return url.toString()
 }
 
-export function uriToCredentials(
-  connectionString: string,
-): DatabaseCredentials {
+// opposite of credentialsToUri
+// maybe rename, since it's about returning a parsed uri object? connection info?
+export function uriToCredentials(connectionString: string): DatabaseCredentials {
+  // rename to url everywhere?
   let uri: NodeURL.URL
   try {
     uri = new NodeURL.URL(connectionString)
@@ -84,15 +91,16 @@ export function uriToCredentials(
 
   const type = protocolToConnectorType(uri.protocol)
 
-  // needed, as the URL implementation adds empty strings
-  const exists = (str): boolean => str && str.length > 0
-
+  // if mongodb no extra parsing
   if (type === 'mongodb') {
     return {
       type,
       uri: connectionString, // todo: set authsource as database if not provided explicitly
     }
   }
+
+  // needed, as the URL implementation adds empty strings
+  const exists = (str): boolean => str && str.length > 0
 
   const extraFields = {}
   const schema = uri.searchParams.get('schema')
@@ -105,20 +113,27 @@ export function uriToCredentials(
   }
 
   let database: string | undefined = undefined
+  // For Postgres only?
   let defaultSchema: string | undefined = undefined
 
   if (type === 'sqlite' && uri.pathname) {
+    // weird conditionals here
     if (uri.pathname.startsWith('file:')) {
       database = uri.pathname.slice(5)
     }
     if (uri.pathname.startsWith('sqlite:')) {
       database = uri.pathname.slice(7)
     } else {
+      // here it's only the file name?
       database = path.basename(uri.pathname)
     }
-  } else if (uri.pathname.length > 1) {
+  }
+  // why length more than 1?
+  // probably for slicing `/` or `?`?
+  else if (uri.pathname.length > 1) {
     database = uri.pathname.slice(1)
 
+    // if after slicing "database" is empty
     if (type === 'postgresql' && !database) {
       // use postgres as default, it's 99% accurate
       // could also be template1 for example in rare cases
@@ -146,9 +161,11 @@ export function uriToCredentials(
   }
 }
 
-function databaseTypeToProtocol(databaseType: ConnectorType): string {
+// do we need a function for that?
+function databaseTypeToProtocol(databaseType: ConnectorType) {
   switch (databaseType) {
     case 'postgresql':
+    case 'cockroachdb':
       return 'postgresql:'
     case 'mysql':
       return 'mysql:'
@@ -158,7 +175,11 @@ function databaseTypeToProtocol(databaseType: ConnectorType): string {
       return 'sqlite:'
     case 'sqlserver':
       return 'sqlserver:'
+    case 'jdbc:sqlserver':
+      return 'jdbc:sqlserver:'
   }
+
+  throw new Error(`Unknown databaseType ${databaseType}`)
 }
 
 export function protocolToConnectorType(protocol: string): ConnectorType {
@@ -166,6 +187,7 @@ export function protocolToConnectorType(protocol: string): ConnectorType {
     case 'postgresql:':
     case 'postgres:':
       return 'postgresql'
+    case 'mongodb+srv:':
     case 'mongodb:':
       return 'mongodb'
     case 'mysql:':
@@ -178,5 +200,5 @@ export function protocolToConnectorType(protocol: string): ConnectorType {
       return 'sqlserver'
   }
 
-  throw new Error(`Unknown database type ${protocol}`)
+  throw new Error(`Unknown protocol ${protocol}`)
 }

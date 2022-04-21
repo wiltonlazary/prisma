@@ -1,17 +1,9 @@
-import {
-  arg,
-  Command,
-  format,
-  formatSchema,
-  getDMMF,
-  getSchemaPath,
-  HelpError,
-} from '@prisma/sdk'
+import { getSchemaPathAndPrint } from '@prisma/migrate'
+import type { Command } from '@prisma/sdk'
+import { arg, format, formatms, formatSchema, getDMMF, HelpError } from '@prisma/sdk'
 import chalk from 'chalk'
 import fs from 'fs'
 import os from 'os'
-import path from 'path'
-import { formatms } from './utils/formatms'
 
 /**
  * $ prisma format
@@ -60,25 +52,7 @@ Or specify a Prisma schema path
       return this.help()
     }
 
-    const schemaPath = await getSchemaPath(args['--schema'])
-
-    if (!schemaPath) {
-      throw new Error(
-        `Could not find a ${chalk.bold(
-          'schema.prisma',
-        )} file that is required for this command.\nYou can either provide it with ${chalk.greenBright(
-          '--schema',
-        )}, set it as \`prisma.schema\` in your package.json or put it into the default location ${chalk.greenBright(
-          './prisma/schema.prisma',
-        )} https://pris.ly/d/prisma-schema-location`,
-      )
-    }
-
-    console.log(
-      chalk.dim(
-        `Prisma schema loaded from ${path.relative(process.cwd(), schemaPath)}`,
-      ),
-    )
+    const schemaPath = await getSchemaPathAndPrint(args['--schema'])
 
     let output = await formatSchema({
       schemaPath,
@@ -93,9 +67,7 @@ Or specify a Prisma schema path
     fs.writeFileSync(schemaPath, output)
     const after = Date.now()
 
-    return `Formatted ${chalk.underline(schemaPath)} in ${formatms(
-      after - before,
-    )} 🚀`
+    return `Formatted ${chalk.underline(schemaPath)} in ${formatms(after - before)} 🚀`
   }
 
   public help(error?: string): string | HelpError {

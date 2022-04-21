@@ -318,7 +318,7 @@ exports[`exhaustive-schema: generatedTypeScript 1`] = `
  * Client
 **/
 
-import * as runtime from '@prisma/client/runtime';
+import * as runtime from '@prisma/client/runtime/index';
 declare const prisma: unique symbol
 export type PrismaPromise<A> = Promise<A> & {[prisma]: true}
 type UnwrapPromise<P extends any> = P extends Promise<infer R> ? R : P
@@ -329,8 +329,8 @@ type UnwrapTuple<Tuple extends readonly unknown[]> = {
 
 /**
  * Model Post
+ * 
  */
-
 export type Post = {
   id: number
   createdAt: Date
@@ -342,8 +342,8 @@ export type Post = {
 
 /**
  * Model User
+ * 
  */
-
 export type User = {
   id: number
   email: string
@@ -363,8 +363,8 @@ export type User = {
 
 /**
  * Model M
+ * 
  */
-
 export type M = {
   id: number
   int: number
@@ -383,8 +383,8 @@ export type M = {
 
 /**
  * Model N
+ * 
  */
-
 export type N = {
   id: number
   int: number
@@ -403,8 +403,8 @@ export type N = {
 
 /**
  * Model OneOptional
+ * 
  */
-
 export type OneOptional = {
   id: number
   int: number
@@ -423,8 +423,8 @@ export type OneOptional = {
 
 /**
  * Model ManyRequired
+ * 
  */
-
 export type ManyRequired = {
   id: number
   oneOptionalId: number | null
@@ -444,8 +444,8 @@ export type ManyRequired = {
 
 /**
  * Model OptionalSide1
+ * 
  */
-
 export type OptionalSide1 = {
   id: number
   optionalSide2Id: number | null
@@ -465,8 +465,8 @@ export type OptionalSide1 = {
 
 /**
  * Model OptionalSide2
+ * 
  */
-
 export type OptionalSide2 = {
   id: number
   int: number
@@ -485,12 +485,18 @@ export type OptionalSide2 = {
 
 /**
  * Model A
+ * model comment
  */
-
 export type A = {
+  /**
+   * field comment 1
+   */
   id: string
   email: string
   name: string | null
+  /**
+   * field comment 2
+   */
   int: number
   sInt: number
   bInt: bigint
@@ -501,8 +507,8 @@ export type A = {
 
 /**
  * Model B
+ * 
  */
-
 export type B = {
   id: string
   float: number
@@ -513,8 +519,8 @@ export type B = {
 
 /**
  * Model C
+ * 
  */
-
 export type C = {
   id: string
   char: string
@@ -527,8 +533,8 @@ export type C = {
 
 /**
  * Model D
+ * 
  */
-
 export type D = {
   id: string
   bool: boolean
@@ -540,8 +546,8 @@ export type D = {
 
 /**
  * Model E
+ * 
  */
-
 export type E = {
   id: string
   date: Date
@@ -638,14 +644,14 @@ export class PrismaClient<
   /**
    * Disconnect from the database
    */
-  $disconnect(): Promise<any>;
+  $disconnect(): Promise<void>;
 
   /**
    * Add a middleware
    */
   $use(cb: Prisma.Middleware): void
 
-  /**
+/**
    * Executes a prepared raw query and returns the number of affected rows.
    * @example
    * \`\`\`
@@ -705,7 +711,6 @@ export class PrismaClient<
    * Read more in our [docs](https://www.prisma.io/docs/concepts/components/prisma-client/transactions).
    */
   $transaction<P extends PrismaPromise<any>[]>(arg: [...P]): Promise<UnwrapTuple<P>>;
-
 
       /**
    * \`prisma.post\`: Exposes CRUD operations for the **Post** model.
@@ -884,13 +889,13 @@ export namespace Prisma {
    * This type can be useful to enforce some input to be JSON-compatible or as a super-type to be extended from. 
    */
   export type JsonObject = {[Key in string]?: JsonValue}
- 
+
   /**
    * From https://github.com/sindresorhus/type-fest/
    * Matches a JSON array.
    */
   export interface JsonArray extends Array<JsonValue> {}
- 
+
   /**
    * From https://github.com/sindresorhus/type-fest/
    * Matches any valid JSON value.
@@ -898,12 +903,30 @@ export namespace Prisma {
   export type JsonValue = string | number | boolean | JsonObject | JsonArray | null
 
   /**
-   * Same as JsonObject, but allows undefined
+   * Matches a JSON object.
+   * Unlike \`JsonObject\`, this type allows undefined and read-only properties.
    */
-  export type InputJsonObject = {[Key in string]?: JsonValue}
- 
-  export interface InputJsonArray extends Array<JsonValue> {}
- 
+  export type InputJsonObject = {readonly [Key in string]?: InputJsonValue | null}
+
+  /**
+   * Matches a JSON array.
+   * Unlike \`JsonArray\`, readonly arrays are assignable to this type.
+   */
+  export interface InputJsonArray extends ReadonlyArray<InputJsonValue | null> {}
+
+  /**
+   * Matches any valid value that can be used as an input for operations like
+   * create and update as the value of a JSON field. Unlike \`JsonValue\`, this
+   * type allows read-only arrays and read-only object properties and disallows
+   * \`null\` at the top level.
+   *
+   * \`null\` cannot be used as the value of a JSON field because its meaning
+   * would be ambiguous. Use \`Prisma.JsonNull\` to store the JSON null value or
+   * \`Prisma.DbNull\` to clear the JSON value and set the field to the database
+   * NULL value instead.
+   *
+   * @see https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-by-null-values
+   */
   export type InputJsonValue = string | number | boolean | InputJsonObject | InputJsonArray
 
   /**
@@ -1010,7 +1033,11 @@ export namespace Prisma {
    * XOR is needed to have a real mutually exclusive union type
    * https://stackoverflow.com/questions/42123407/does-typescript-support-mutually-exclusive-types
    */
-  type XOR<T, U> = (T | U) extends object ? (Without<T, U> & U) | (Without<U, T> & T) : T | U;
+  type XOR<T, U> =
+    T extends object ?
+    U extends object ?
+      (Without<T, U> & U) | (Without<U, T> & T)
+    : U : T
 
 
   /**
@@ -1263,7 +1290,7 @@ export namespace Prisma {
     ? IsReject<LocalRejectSettings>
     : GlobalRejectSettings extends RejectPerOperation
     ? Action extends keyof GlobalRejectSettings
-      ? GlobalRejectSettings[Action] extends boolean
+      ? GlobalRejectSettings[Action] extends RejectOnNotFound
         ? IsReject<GlobalRejectSettings[Action]>
         : GlobalRejectSettings[Action] extends RejectPerModel
         ? Model extends keyof GlobalRejectSettings[Action]
@@ -1364,6 +1391,7 @@ export namespace Prisma {
     | 'queryRaw'
     | 'aggregate'
     | 'count'
+    | 'runCommandRaw'
 
   /**
    * These options are being passed in to the middleware as "params"
@@ -1420,9 +1448,8 @@ export namespace Prisma {
     ? UserCountOutputType 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof UserCountOutputType ?UserCountOutputType [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof UserCountOutputType ? UserCountOutputType[P] : never
   } 
     : UserCountOutputType
   : UserCountOutputType
@@ -1470,9 +1497,8 @@ export namespace Prisma {
     ? MCountOutputType 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof MCountOutputType ?MCountOutputType [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof MCountOutputType ? MCountOutputType[P] : never
   } 
     : MCountOutputType
   : MCountOutputType
@@ -1520,9 +1546,8 @@ export namespace Prisma {
     ? NCountOutputType 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof NCountOutputType ?NCountOutputType [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof NCountOutputType ? NCountOutputType[P] : never
   } 
     : NCountOutputType
   : NCountOutputType
@@ -1570,9 +1595,8 @@ export namespace Prisma {
     ? OneOptionalCountOutputType 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof OneOptionalCountOutputType ?OneOptionalCountOutputType [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof OneOptionalCountOutputType ? OneOptionalCountOutputType[P] : never
   } 
     : OneOptionalCountOutputType
   : OneOptionalCountOutputType
@@ -1764,8 +1788,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type PostGroupByArgs = {
     where?: PostWhereInput
     orderBy?: Enumerable<PostOrderByWithAggregationInput>
@@ -1795,17 +1819,17 @@ export namespace Prisma {
     _max: PostMaxAggregateOutputType | null
   }
 
-  type GetPostGroupByPayload<T extends PostGroupByArgs> = Promise<
+  type GetPostGroupByPayload<T extends PostGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<PostGroupByOutputType, T['by']> & 
+      PickArray<PostGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof PostGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], PostGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof PostGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PostGroupByOutputType[P]>
             : GetScalarType<T[P], PostGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -1833,16 +1857,13 @@ export namespace Prisma {
     : S extends PostArgs | PostFindManyArgs
     ?'include' extends U
     ? Post  & {
-    [P in TrueKeys<S['include']>]: 
-          P extends 'author'
-        ? UserGetPayload<S['include'][P]> : never
+    [P in TrueKeys<S['include']>]:
+        P extends 'author' ? UserGetPayload<S['include'][P]> :  never
   } 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof Post ?Post [P]
-  : 
-          P extends 'author'
-        ? UserGetPayload<S['select'][P]> : never
+    [P in TrueKeys<S['select']>]:
+        P extends 'author' ? UserGetPayload<S['select'][P]> :  P extends keyof Post ? Post[P] : never
   } 
     : Post
   : Post
@@ -2156,14 +2177,14 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, PostGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPostGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, PostGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPostGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for Post.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
-   * TEST_GITHUB_LINK
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__PostClient<T> implements PrismaPromise<T> {
     [prisma]: true;
@@ -2375,6 +2396,10 @@ export namespace Prisma {
    * Post createMany
    */
   export type PostCreateManyArgs = {
+    /**
+     * The data used to create many Posts.
+     * 
+    **/
     data: Enumerable<PostCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -2411,7 +2436,15 @@ export namespace Prisma {
    * Post updateMany
    */
   export type PostUpdateManyArgs = {
+    /**
+     * The data used to update Posts.
+     * 
+    **/
     data: XOR<PostUpdateManyMutationInput, PostUncheckedUpdateManyInput>
+    /**
+     * Filter which Posts to update
+     * 
+    **/
     where?: PostWhereInput
   }
 
@@ -2474,6 +2507,10 @@ export namespace Prisma {
    * Post deleteMany
    */
   export type PostDeleteManyArgs = {
+    /**
+     * Filter which Posts to delete
+     * 
+    **/
     where?: PostWhereInput
   }
 
@@ -2713,8 +2750,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type UserGroupByArgs = {
     where?: UserWhereInput
     orderBy?: Enumerable<UserOrderByWithAggregationInput>
@@ -2752,17 +2789,17 @@ export namespace Prisma {
     _max: UserMaxAggregateOutputType | null
   }
 
-  type GetUserGroupByPayload<T extends UserGroupByArgs> = Promise<
+  type GetUserGroupByPayload<T extends UserGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<UserGroupByOutputType, T['by']> & 
+      PickArray<UserGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof UserGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], UserGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof UserGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], UserGroupByOutputType[P]>
             : GetScalarType<T[P], UserGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -2800,20 +2837,15 @@ export namespace Prisma {
     : S extends UserArgs | UserFindManyArgs
     ?'include' extends U
     ? User  & {
-    [P in TrueKeys<S['include']>]: 
-          P extends 'posts'
-        ? Array < PostGetPayload<S['include'][P]>>  :
-        P extends '_count'
-        ? UserCountOutputTypeGetPayload<S['include'][P]> | null : never
+    [P in TrueKeys<S['include']>]:
+        P extends 'posts' ? Array < PostGetPayload<S['include'][P]>>  :
+        P extends '_count' ? UserCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof User ?User [P]
-  : 
-          P extends 'posts'
-        ? Array < PostGetPayload<S['select'][P]>>  :
-        P extends '_count'
-        ? UserCountOutputTypeGetPayload<S['select'][P]> | null : never
+    [P in TrueKeys<S['select']>]:
+        P extends 'posts' ? Array < PostGetPayload<S['select'][P]>>  :
+        P extends '_count' ? UserCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof User ? User[P] : never
   } 
     : User
   : User
@@ -3127,13 +3159,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, UserGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetUserGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, UserGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetUserGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for User.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__UserClient<T> implements PrismaPromise<T> {
@@ -3346,6 +3378,10 @@ export namespace Prisma {
    * User createMany
    */
   export type UserCreateManyArgs = {
+    /**
+     * The data used to create many Users.
+     * 
+    **/
     data: Enumerable<UserCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -3382,7 +3418,15 @@ export namespace Prisma {
    * User updateMany
    */
   export type UserUpdateManyArgs = {
+    /**
+     * The data used to update Users.
+     * 
+    **/
     data: XOR<UserUpdateManyMutationInput, UserUncheckedUpdateManyInput>
+    /**
+     * Filter which Users to update
+     * 
+    **/
     where?: UserWhereInput
   }
 
@@ -3445,6 +3489,10 @@ export namespace Prisma {
    * User deleteMany
    */
   export type UserDeleteManyArgs = {
+    /**
+     * Filter which Users to delete
+     * 
+    **/
     where?: UserWhereInput
   }
 
@@ -3678,8 +3726,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type MGroupByArgs = {
     where?: MWhereInput
     orderBy?: Enumerable<MOrderByWithAggregationInput>
@@ -3716,17 +3764,17 @@ export namespace Prisma {
     _max: MMaxAggregateOutputType | null
   }
 
-  type GetMGroupByPayload<T extends MGroupByArgs> = Promise<
+  type GetMGroupByPayload<T extends MGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<MGroupByOutputType, T['by']> & 
+      PickArray<MGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof MGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], MGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof MGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], MGroupByOutputType[P]>
             : GetScalarType<T[P], MGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -3763,20 +3811,15 @@ export namespace Prisma {
     : S extends MArgs | MFindManyArgs
     ?'include' extends U
     ? M  & {
-    [P in TrueKeys<S['include']>]: 
-          P extends 'n'
-        ? Array < NGetPayload<S['include'][P]>>  :
-        P extends '_count'
-        ? MCountOutputTypeGetPayload<S['include'][P]> | null : never
+    [P in TrueKeys<S['include']>]:
+        P extends 'n' ? Array < NGetPayload<S['include'][P]>>  :
+        P extends '_count' ? MCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof M ?M [P]
-  : 
-          P extends 'n'
-        ? Array < NGetPayload<S['select'][P]>>  :
-        P extends '_count'
-        ? MCountOutputTypeGetPayload<S['select'][P]> | null : never
+    [P in TrueKeys<S['select']>]:
+        P extends 'n' ? Array < NGetPayload<S['select'][P]>>  :
+        P extends '_count' ? MCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof M ? M[P] : never
   } 
     : M
   : M
@@ -4090,13 +4133,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, MGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetMGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, MGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetMGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for M.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__MClient<T> implements PrismaPromise<T> {
@@ -4309,6 +4352,10 @@ export namespace Prisma {
    * M createMany
    */
   export type MCreateManyArgs = {
+    /**
+     * The data used to create many MS.
+     * 
+    **/
     data: Enumerable<MCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -4345,7 +4392,15 @@ export namespace Prisma {
    * M updateMany
    */
   export type MUpdateManyArgs = {
+    /**
+     * The data used to update MS.
+     * 
+    **/
     data: XOR<MUpdateManyMutationInput, MUncheckedUpdateManyInput>
+    /**
+     * Filter which MS to update
+     * 
+    **/
     where?: MWhereInput
   }
 
@@ -4408,6 +4463,10 @@ export namespace Prisma {
    * M deleteMany
    */
   export type MDeleteManyArgs = {
+    /**
+     * Filter which MS to delete
+     * 
+    **/
     where?: MWhereInput
   }
 
@@ -4641,8 +4700,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type NGroupByArgs = {
     where?: NWhereInput
     orderBy?: Enumerable<NOrderByWithAggregationInput>
@@ -4679,17 +4738,17 @@ export namespace Prisma {
     _max: NMaxAggregateOutputType | null
   }
 
-  type GetNGroupByPayload<T extends NGroupByArgs> = Promise<
+  type GetNGroupByPayload<T extends NGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<NGroupByOutputType, T['by']> & 
+      PickArray<NGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof NGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], NGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof NGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], NGroupByOutputType[P]>
             : GetScalarType<T[P], NGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -4726,20 +4785,15 @@ export namespace Prisma {
     : S extends NArgs | NFindManyArgs
     ?'include' extends U
     ? N  & {
-    [P in TrueKeys<S['include']>]: 
-          P extends 'm'
-        ? Array < MGetPayload<S['include'][P]>>  :
-        P extends '_count'
-        ? NCountOutputTypeGetPayload<S['include'][P]> | null : never
+    [P in TrueKeys<S['include']>]:
+        P extends 'm' ? Array < MGetPayload<S['include'][P]>>  :
+        P extends '_count' ? NCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof N ?N [P]
-  : 
-          P extends 'm'
-        ? Array < MGetPayload<S['select'][P]>>  :
-        P extends '_count'
-        ? NCountOutputTypeGetPayload<S['select'][P]> | null : never
+    [P in TrueKeys<S['select']>]:
+        P extends 'm' ? Array < MGetPayload<S['select'][P]>>  :
+        P extends '_count' ? NCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof N ? N[P] : never
   } 
     : N
   : N
@@ -5053,13 +5107,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, NGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetNGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, NGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetNGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for N.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__NClient<T> implements PrismaPromise<T> {
@@ -5272,6 +5326,10 @@ export namespace Prisma {
    * N createMany
    */
   export type NCreateManyArgs = {
+    /**
+     * The data used to create many NS.
+     * 
+    **/
     data: Enumerable<NCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -5308,7 +5366,15 @@ export namespace Prisma {
    * N updateMany
    */
   export type NUpdateManyArgs = {
+    /**
+     * The data used to update NS.
+     * 
+    **/
     data: XOR<NUpdateManyMutationInput, NUncheckedUpdateManyInput>
+    /**
+     * Filter which NS to update
+     * 
+    **/
     where?: NWhereInput
   }
 
@@ -5371,6 +5437,10 @@ export namespace Prisma {
    * N deleteMany
    */
   export type NDeleteManyArgs = {
+    /**
+     * Filter which NS to delete
+     * 
+    **/
     where?: NWhereInput
   }
 
@@ -5604,8 +5674,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type OneOptionalGroupByArgs = {
     where?: OneOptionalWhereInput
     orderBy?: Enumerable<OneOptionalOrderByWithAggregationInput>
@@ -5642,17 +5712,17 @@ export namespace Prisma {
     _max: OneOptionalMaxAggregateOutputType | null
   }
 
-  type GetOneOptionalGroupByPayload<T extends OneOptionalGroupByArgs> = Promise<
+  type GetOneOptionalGroupByPayload<T extends OneOptionalGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<OneOptionalGroupByOutputType, T['by']> & 
+      PickArray<OneOptionalGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof OneOptionalGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], OneOptionalGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof OneOptionalGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OneOptionalGroupByOutputType[P]>
             : GetScalarType<T[P], OneOptionalGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -5689,20 +5759,15 @@ export namespace Prisma {
     : S extends OneOptionalArgs | OneOptionalFindManyArgs
     ?'include' extends U
     ? OneOptional  & {
-    [P in TrueKeys<S['include']>]: 
-          P extends 'many'
-        ? Array < ManyRequiredGetPayload<S['include'][P]>>  :
-        P extends '_count'
-        ? OneOptionalCountOutputTypeGetPayload<S['include'][P]> | null : never
+    [P in TrueKeys<S['include']>]:
+        P extends 'many' ? Array < ManyRequiredGetPayload<S['include'][P]>>  :
+        P extends '_count' ? OneOptionalCountOutputTypeGetPayload<S['include'][P]> :  never
   } 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof OneOptional ?OneOptional [P]
-  : 
-          P extends 'many'
-        ? Array < ManyRequiredGetPayload<S['select'][P]>>  :
-        P extends '_count'
-        ? OneOptionalCountOutputTypeGetPayload<S['select'][P]> | null : never
+    [P in TrueKeys<S['select']>]:
+        P extends 'many' ? Array < ManyRequiredGetPayload<S['select'][P]>>  :
+        P extends '_count' ? OneOptionalCountOutputTypeGetPayload<S['select'][P]> :  P extends keyof OneOptional ? OneOptional[P] : never
   } 
     : OneOptional
   : OneOptional
@@ -6016,13 +6081,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, OneOptionalGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOneOptionalGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, OneOptionalGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOneOptionalGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for OneOptional.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__OneOptionalClient<T> implements PrismaPromise<T> {
@@ -6235,6 +6300,10 @@ export namespace Prisma {
    * OneOptional createMany
    */
   export type OneOptionalCreateManyArgs = {
+    /**
+     * The data used to create many OneOptionals.
+     * 
+    **/
     data: Enumerable<OneOptionalCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -6271,7 +6340,15 @@ export namespace Prisma {
    * OneOptional updateMany
    */
   export type OneOptionalUpdateManyArgs = {
+    /**
+     * The data used to update OneOptionals.
+     * 
+    **/
     data: XOR<OneOptionalUpdateManyMutationInput, OneOptionalUncheckedUpdateManyInput>
+    /**
+     * Filter which OneOptionals to update
+     * 
+    **/
     where?: OneOptionalWhereInput
   }
 
@@ -6334,6 +6411,10 @@ export namespace Prisma {
    * OneOptional deleteMany
    */
   export type OneOptionalDeleteManyArgs = {
+    /**
+     * Filter which OneOptionals to delete
+     * 
+    **/
     where?: OneOptionalWhereInput
   }
 
@@ -6577,8 +6658,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type ManyRequiredGroupByArgs = {
     where?: ManyRequiredWhereInput
     orderBy?: Enumerable<ManyRequiredOrderByWithAggregationInput>
@@ -6616,17 +6697,17 @@ export namespace Prisma {
     _max: ManyRequiredMaxAggregateOutputType | null
   }
 
-  type GetManyRequiredGroupByPayload<T extends ManyRequiredGroupByArgs> = Promise<
+  type GetManyRequiredGroupByPayload<T extends ManyRequiredGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<ManyRequiredGroupByOutputType, T['by']> & 
+      PickArray<ManyRequiredGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof ManyRequiredGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], ManyRequiredGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof ManyRequiredGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ManyRequiredGroupByOutputType[P]>
             : GetScalarType<T[P], ManyRequiredGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -6662,16 +6743,13 @@ export namespace Prisma {
     : S extends ManyRequiredArgs | ManyRequiredFindManyArgs
     ?'include' extends U
     ? ManyRequired  & {
-    [P in TrueKeys<S['include']>]: 
-          P extends 'one'
-        ? OneOptionalGetPayload<S['include'][P]> | null : never
+    [P in TrueKeys<S['include']>]:
+        P extends 'one' ? OneOptionalGetPayload<S['include'][P]> | null :  never
   } 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof ManyRequired ?ManyRequired [P]
-  : 
-          P extends 'one'
-        ? OneOptionalGetPayload<S['select'][P]> | null : never
+    [P in TrueKeys<S['select']>]:
+        P extends 'one' ? OneOptionalGetPayload<S['select'][P]> | null :  P extends keyof ManyRequired ? ManyRequired[P] : never
   } 
     : ManyRequired
   : ManyRequired
@@ -6985,13 +7063,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, ManyRequiredGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetManyRequiredGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, ManyRequiredGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetManyRequiredGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for ManyRequired.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__ManyRequiredClient<T> implements PrismaPromise<T> {
@@ -7204,6 +7282,10 @@ export namespace Prisma {
    * ManyRequired createMany
    */
   export type ManyRequiredCreateManyArgs = {
+    /**
+     * The data used to create many ManyRequireds.
+     * 
+    **/
     data: Enumerable<ManyRequiredCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -7240,7 +7322,15 @@ export namespace Prisma {
    * ManyRequired updateMany
    */
   export type ManyRequiredUpdateManyArgs = {
+    /**
+     * The data used to update ManyRequireds.
+     * 
+    **/
     data: XOR<ManyRequiredUpdateManyMutationInput, ManyRequiredUncheckedUpdateManyInput>
+    /**
+     * Filter which ManyRequireds to update
+     * 
+    **/
     where?: ManyRequiredWhereInput
   }
 
@@ -7303,6 +7393,10 @@ export namespace Prisma {
    * ManyRequired deleteMany
    */
   export type ManyRequiredDeleteManyArgs = {
+    /**
+     * Filter which ManyRequireds to delete
+     * 
+    **/
     where?: ManyRequiredWhereInput
   }
 
@@ -7546,8 +7640,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type OptionalSide1GroupByArgs = {
     where?: OptionalSide1WhereInput
     orderBy?: Enumerable<OptionalSide1OrderByWithAggregationInput>
@@ -7585,17 +7679,17 @@ export namespace Prisma {
     _max: OptionalSide1MaxAggregateOutputType | null
   }
 
-  type GetOptionalSide1GroupByPayload<T extends OptionalSide1GroupByArgs> = Promise<
+  type GetOptionalSide1GroupByPayload<T extends OptionalSide1GroupByArgs> = PrismaPromise<
     Array<
-      PickArray<OptionalSide1GroupByOutputType, T['by']> & 
+      PickArray<OptionalSide1GroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof OptionalSide1GroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], OptionalSide1GroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof OptionalSide1GroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OptionalSide1GroupByOutputType[P]>
             : GetScalarType<T[P], OptionalSide1GroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -7631,16 +7725,13 @@ export namespace Prisma {
     : S extends OptionalSide1Args | OptionalSide1FindManyArgs
     ?'include' extends U
     ? OptionalSide1  & {
-    [P in TrueKeys<S['include']>]: 
-          P extends 'opti'
-        ? OptionalSide2GetPayload<S['include'][P]> | null : never
+    [P in TrueKeys<S['include']>]:
+        P extends 'opti' ? OptionalSide2GetPayload<S['include'][P]> | null :  never
   } 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof OptionalSide1 ?OptionalSide1 [P]
-  : 
-          P extends 'opti'
-        ? OptionalSide2GetPayload<S['select'][P]> | null : never
+    [P in TrueKeys<S['select']>]:
+        P extends 'opti' ? OptionalSide2GetPayload<S['select'][P]> | null :  P extends keyof OptionalSide1 ? OptionalSide1[P] : never
   } 
     : OptionalSide1
   : OptionalSide1
@@ -7954,13 +8045,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, OptionalSide1GroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOptionalSide1GroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, OptionalSide1GroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOptionalSide1GroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for OptionalSide1.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__OptionalSide1Client<T> implements PrismaPromise<T> {
@@ -8173,6 +8264,10 @@ export namespace Prisma {
    * OptionalSide1 createMany
    */
   export type OptionalSide1CreateManyArgs = {
+    /**
+     * The data used to create many OptionalSide1s.
+     * 
+    **/
     data: Enumerable<OptionalSide1CreateManyInput>
     skipDuplicates?: boolean
   }
@@ -8209,7 +8304,15 @@ export namespace Prisma {
    * OptionalSide1 updateMany
    */
   export type OptionalSide1UpdateManyArgs = {
+    /**
+     * The data used to update OptionalSide1s.
+     * 
+    **/
     data: XOR<OptionalSide1UpdateManyMutationInput, OptionalSide1UncheckedUpdateManyInput>
+    /**
+     * Filter which OptionalSide1s to update
+     * 
+    **/
     where?: OptionalSide1WhereInput
   }
 
@@ -8272,6 +8375,10 @@ export namespace Prisma {
    * OptionalSide1 deleteMany
    */
   export type OptionalSide1DeleteManyArgs = {
+    /**
+     * Filter which OptionalSide1s to delete
+     * 
+    **/
     where?: OptionalSide1WhereInput
   }
 
@@ -8505,8 +8612,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type OptionalSide2GroupByArgs = {
     where?: OptionalSide2WhereInput
     orderBy?: Enumerable<OptionalSide2OrderByWithAggregationInput>
@@ -8543,17 +8650,17 @@ export namespace Prisma {
     _max: OptionalSide2MaxAggregateOutputType | null
   }
 
-  type GetOptionalSide2GroupByPayload<T extends OptionalSide2GroupByArgs> = Promise<
+  type GetOptionalSide2GroupByPayload<T extends OptionalSide2GroupByArgs> = PrismaPromise<
     Array<
-      PickArray<OptionalSide2GroupByOutputType, T['by']> & 
+      PickArray<OptionalSide2GroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof OptionalSide2GroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], OptionalSide2GroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof OptionalSide2GroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], OptionalSide2GroupByOutputType[P]>
             : GetScalarType<T[P], OptionalSide2GroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -8588,16 +8695,13 @@ export namespace Prisma {
     : S extends OptionalSide2Args | OptionalSide2FindManyArgs
     ?'include' extends U
     ? OptionalSide2  & {
-    [P in TrueKeys<S['include']>]: 
-          P extends 'opti'
-        ? OptionalSide1GetPayload<S['include'][P]> | null : never
+    [P in TrueKeys<S['include']>]:
+        P extends 'opti' ? OptionalSide1GetPayload<S['include'][P]> | null :  never
   } 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof OptionalSide2 ?OptionalSide2 [P]
-  : 
-          P extends 'opti'
-        ? OptionalSide1GetPayload<S['select'][P]> | null : never
+    [P in TrueKeys<S['select']>]:
+        P extends 'opti' ? OptionalSide1GetPayload<S['select'][P]> | null :  P extends keyof OptionalSide2 ? OptionalSide2[P] : never
   } 
     : OptionalSide2
   : OptionalSide2
@@ -8911,13 +9015,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, OptionalSide2GroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOptionalSide2GroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, OptionalSide2GroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetOptionalSide2GroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for OptionalSide2.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__OptionalSide2Client<T> implements PrismaPromise<T> {
@@ -9130,6 +9234,10 @@ export namespace Prisma {
    * OptionalSide2 createMany
    */
   export type OptionalSide2CreateManyArgs = {
+    /**
+     * The data used to create many OptionalSide2s.
+     * 
+    **/
     data: Enumerable<OptionalSide2CreateManyInput>
     skipDuplicates?: boolean
   }
@@ -9166,7 +9274,15 @@ export namespace Prisma {
    * OptionalSide2 updateMany
    */
   export type OptionalSide2UpdateManyArgs = {
+    /**
+     * The data used to update OptionalSide2s.
+     * 
+    **/
     data: XOR<OptionalSide2UpdateManyMutationInput, OptionalSide2UncheckedUpdateManyInput>
+    /**
+     * Filter which OptionalSide2s to update
+     * 
+    **/
     where?: OptionalSide2WhereInput
   }
 
@@ -9229,6 +9345,10 @@ export namespace Prisma {
    * OptionalSide2 deleteMany
    */
   export type OptionalSide2DeleteManyArgs = {
+    /**
+     * Filter which OptionalSide2s to delete
+     * 
+    **/
     where?: OptionalSide2WhereInput
   }
 
@@ -9450,8 +9570,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type AGroupByArgs = {
     where?: AWhereInput
     orderBy?: Enumerable<AOrderByWithAggregationInput>
@@ -9484,17 +9604,17 @@ export namespace Prisma {
     _max: AMaxAggregateOutputType | null
   }
 
-  type GetAGroupByPayload<T extends AGroupByArgs> = Promise<
+  type GetAGroupByPayload<T extends AGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<AGroupByOutputType, T['by']> & 
+      PickArray<AGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof AGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], AGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof AGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AGroupByOutputType[P]>
             : GetScalarType<T[P], AGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -9522,9 +9642,8 @@ export namespace Prisma {
     ? A 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof A ?A [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof A ? A[P] : never
   } 
     : A
   : A
@@ -9838,13 +9957,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, AGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, AGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for A.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__AClient<T> implements PrismaPromise<T> {
@@ -10036,6 +10155,10 @@ export namespace Prisma {
    * A createMany
    */
   export type ACreateManyArgs = {
+    /**
+     * The data used to create many AS.
+     * 
+    **/
     data: Enumerable<ACreateManyInput>
     skipDuplicates?: boolean
   }
@@ -10067,7 +10190,15 @@ export namespace Prisma {
    * A updateMany
    */
   export type AUpdateManyArgs = {
+    /**
+     * The data used to update AS.
+     * 
+    **/
     data: XOR<AUpdateManyMutationInput, AUncheckedUpdateManyInput>
+    /**
+     * Filter which AS to update
+     * 
+    **/
     where?: AWhereInput
   }
 
@@ -10120,6 +10251,10 @@ export namespace Prisma {
    * A deleteMany
    */
   export type ADeleteManyArgs = {
+    /**
+     * Filter which AS to delete
+     * 
+    **/
     where?: AWhereInput
   }
 
@@ -10304,8 +10439,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type BGroupByArgs = {
     where?: BWhereInput
     orderBy?: Enumerable<BOrderByWithAggregationInput>
@@ -10334,17 +10469,17 @@ export namespace Prisma {
     _max: BMaxAggregateOutputType | null
   }
 
-  type GetBGroupByPayload<T extends BGroupByArgs> = Promise<
+  type GetBGroupByPayload<T extends BGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<BGroupByOutputType, T['by']> & 
+      PickArray<BGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof BGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], BGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof BGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], BGroupByOutputType[P]>
             : GetScalarType<T[P], BGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -10368,9 +10503,8 @@ export namespace Prisma {
     ? B 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof B ?B [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof B ? B[P] : never
   } 
     : B
   : B
@@ -10684,13 +10818,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, BGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetBGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, BGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetBGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for B.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__BClient<T> implements PrismaPromise<T> {
@@ -10882,6 +11016,10 @@ export namespace Prisma {
    * B createMany
    */
   export type BCreateManyArgs = {
+    /**
+     * The data used to create many BS.
+     * 
+    **/
     data: Enumerable<BCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -10913,7 +11051,15 @@ export namespace Prisma {
    * B updateMany
    */
   export type BUpdateManyArgs = {
+    /**
+     * The data used to update BS.
+     * 
+    **/
     data: XOR<BUpdateManyMutationInput, BUncheckedUpdateManyInput>
+    /**
+     * Filter which BS to update
+     * 
+    **/
     where?: BWhereInput
   }
 
@@ -10966,6 +11112,10 @@ export namespace Prisma {
    * B deleteMany
    */
   export type BDeleteManyArgs = {
+    /**
+     * Filter which BS to delete
+     * 
+    **/
     where?: BWhereInput
   }
 
@@ -11120,8 +11270,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type CGroupByArgs = {
     where?: CWhereInput
     orderBy?: Enumerable<COrderByWithAggregationInput>
@@ -11148,17 +11298,17 @@ export namespace Prisma {
     _max: CMaxAggregateOutputType | null
   }
 
-  type GetCGroupByPayload<T extends CGroupByArgs> = Promise<
+  type GetCGroupByPayload<T extends CGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<CGroupByOutputType, T['by']> & 
+      PickArray<CGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof CGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], CGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof CGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CGroupByOutputType[P]>
             : GetScalarType<T[P], CGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -11184,9 +11334,8 @@ export namespace Prisma {
     ? C 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof C ?C [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof C ? C[P] : never
   } 
     : C
   : C
@@ -11500,13 +11649,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, CGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, CGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for C.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__CClient<T> implements PrismaPromise<T> {
@@ -11698,6 +11847,10 @@ export namespace Prisma {
    * C createMany
    */
   export type CCreateManyArgs = {
+    /**
+     * The data used to create many CS.
+     * 
+    **/
     data: Enumerable<CCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -11729,7 +11882,15 @@ export namespace Prisma {
    * C updateMany
    */
   export type CUpdateManyArgs = {
+    /**
+     * The data used to update CS.
+     * 
+    **/
     data: XOR<CUpdateManyMutationInput, CUncheckedUpdateManyInput>
+    /**
+     * Filter which CS to update
+     * 
+    **/
     where?: CWhereInput
   }
 
@@ -11782,6 +11943,10 @@ export namespace Prisma {
    * C deleteMany
    */
   export type CDeleteManyArgs = {
+    /**
+     * Filter which CS to delete
+     * 
+    **/
     where?: CWhereInput
   }
 
@@ -11922,8 +12087,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type DGroupByArgs = {
     where?: DWhereInput
     orderBy?: Enumerable<DOrderByWithAggregationInput>
@@ -11949,17 +12114,17 @@ export namespace Prisma {
     _max: DMaxAggregateOutputType | null
   }
 
-  type GetDGroupByPayload<T extends DGroupByArgs> = Promise<
+  type GetDGroupByPayload<T extends DGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<DGroupByOutputType, T['by']> & 
+      PickArray<DGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof DGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], DGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof DGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DGroupByOutputType[P]>
             : GetScalarType<T[P], DGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -11984,9 +12149,8 @@ export namespace Prisma {
     ? D 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof D ?D [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof D ? D[P] : never
   } 
     : D
   : D
@@ -12300,13 +12464,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, DGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, DGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for D.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__DClient<T> implements PrismaPromise<T> {
@@ -12498,6 +12662,10 @@ export namespace Prisma {
    * D createMany
    */
   export type DCreateManyArgs = {
+    /**
+     * The data used to create many DS.
+     * 
+    **/
     data: Enumerable<DCreateManyInput>
     skipDuplicates?: boolean
   }
@@ -12529,7 +12697,15 @@ export namespace Prisma {
    * D updateMany
    */
   export type DUpdateManyArgs = {
+    /**
+     * The data used to update DS.
+     * 
+    **/
     data: XOR<DUpdateManyMutationInput, DUncheckedUpdateManyInput>
+    /**
+     * Filter which DS to update
+     * 
+    **/
     where?: DWhereInput
   }
 
@@ -12582,6 +12758,10 @@ export namespace Prisma {
    * D deleteMany
    */
   export type DDeleteManyArgs = {
+    /**
+     * Filter which DS to delete
+     * 
+    **/
     where?: DWhereInput
   }
 
@@ -12718,8 +12898,8 @@ export namespace Prisma {
   }
 
 
-    
-    
+
+
   export type EGroupByArgs = {
     where?: EWhereInput
     orderBy?: Enumerable<EOrderByWithAggregationInput>
@@ -12743,17 +12923,17 @@ export namespace Prisma {
     _max: EMaxAggregateOutputType | null
   }
 
-  type GetEGroupByPayload<T extends EGroupByArgs> = Promise<
+  type GetEGroupByPayload<T extends EGroupByArgs> = PrismaPromise<
     Array<
-      PickArray<EGroupByOutputType, T['by']> & 
+      PickArray<EGroupByOutputType, T['by']> &
         {
-          [P in ((keyof T) & (keyof EGroupByOutputType))]: P extends '_count' 
-            ? T[P] extends boolean 
-              ? number 
-              : GetScalarType<T[P], EGroupByOutputType[P]> 
+          [P in ((keyof T) & (keyof EGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], EGroupByOutputType[P]>
             : GetScalarType<T[P], EGroupByOutputType[P]>
         }
-      > 
+      >
     >
 
 
@@ -12776,9 +12956,8 @@ export namespace Prisma {
     ? E 
     : 'select' extends U
     ? {
-    [P in TrueKeys<S['select']>]: P extends keyof E ?E [P]
-  : 
-     never
+    [P in TrueKeys<S['select']>]:
+    P extends keyof E ? E[P] : never
   } 
     : E
   : E
@@ -13092,13 +13271,13 @@ export namespace Prisma {
             ? never
             : \`Error: Field "\${P}" in "orderBy" needs to be provided in "by"\`
         }[OrderFields]
-    >(args: SubsetIntersection<T, EGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEGroupByPayload<T> : Promise<InputErrors>
+    >(args: SubsetIntersection<T, EGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetEGroupByPayload<T> : PrismaPromise<InputErrors>
   }
 
   /**
    * The delegate class that acts as a "Promise-like" for E.
    * Why is this prefixed with \`Prisma__\`?
-   * Because we want to prevent naming conflicts as mentioned in 
+   * Because we want to prevent naming conflicts as mentioned in
    * https://github.com/prisma/prisma-client-js/issues/707
    */
   export class Prisma__EClient<T> implements PrismaPromise<T> {
@@ -13290,6 +13469,10 @@ export namespace Prisma {
    * E createMany
    */
   export type ECreateManyArgs = {
+    /**
+     * The data used to create many ES.
+     * 
+    **/
     data: Enumerable<ECreateManyInput>
     skipDuplicates?: boolean
   }
@@ -13321,7 +13504,15 @@ export namespace Prisma {
    * E updateMany
    */
   export type EUpdateManyArgs = {
+    /**
+     * The data used to update ES.
+     * 
+    **/
     data: XOR<EUpdateManyMutationInput, EUncheckedUpdateManyInput>
+    /**
+     * Filter which ES to update
+     * 
+    **/
     where?: EWhereInput
   }
 
@@ -13374,6 +13565,10 @@ export namespace Prisma {
    * E deleteMany
    */
   export type EDeleteManyArgs = {
+    /**
+     * Filter which ES to delete
+     * 
+    **/
     where?: EWhereInput
   }
 
@@ -14160,6 +14355,7 @@ export namespace Prisma {
 
   export type OptionalSide1WhereUniqueInput = {
     id?: number
+    optionalSide2Id?: number
   }
 
   export type OptionalSide1OrderByWithAggregationInput = {
@@ -14719,6 +14915,7 @@ export namespace Prisma {
   }
 
   export type MCreateInput = {
+    n?: NCreateNestedManyWithoutMInput
     int: number
     optionalInt?: number | null
     float: number
@@ -14731,11 +14928,11 @@ export namespace Prisma {
     optionalEnum?: ABeautifulEnum | null
     boolean: boolean
     optionalBoolean?: boolean | null
-    n?: NCreateNestedManyWithoutMInput
   }
 
   export type MUncheckedCreateInput = {
     id?: number
+    n?: NUncheckedCreateNestedManyWithoutMInput
     int: number
     optionalInt?: number | null
     float: number
@@ -14751,6 +14948,7 @@ export namespace Prisma {
   }
 
   export type MUpdateInput = {
+    n?: NUpdateManyWithoutMInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -14763,11 +14961,11 @@ export namespace Prisma {
     optionalEnum?: NullableEnumABeautifulEnumFieldUpdateOperationsInput | ABeautifulEnum | null
     boolean?: BoolFieldUpdateOperationsInput | boolean
     optionalBoolean?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    n?: NUpdateManyWithoutMInput
   }
 
   export type MUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
+    n?: NUncheckedUpdateManyWithoutMInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -14830,6 +15028,7 @@ export namespace Prisma {
   }
 
   export type NCreateInput = {
+    m?: MCreateNestedManyWithoutNInput
     int: number
     optionalInt?: number | null
     float: number
@@ -14842,11 +15041,11 @@ export namespace Prisma {
     optionalEnum?: ABeautifulEnum | null
     boolean: boolean
     optionalBoolean?: boolean | null
-    m?: MCreateNestedManyWithoutNInput
   }
 
   export type NUncheckedCreateInput = {
     id?: number
+    m?: MUncheckedCreateNestedManyWithoutNInput
     int: number
     optionalInt?: number | null
     float: number
@@ -14862,6 +15061,7 @@ export namespace Prisma {
   }
 
   export type NUpdateInput = {
+    m?: MUpdateManyWithoutNInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -14874,11 +15074,11 @@ export namespace Prisma {
     optionalEnum?: NullableEnumABeautifulEnumFieldUpdateOperationsInput | ABeautifulEnum | null
     boolean?: BoolFieldUpdateOperationsInput | boolean
     optionalBoolean?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    m?: MUpdateManyWithoutNInput
   }
 
   export type NUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
+    m?: MUncheckedUpdateManyWithoutNInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -14941,6 +15141,7 @@ export namespace Prisma {
   }
 
   export type OneOptionalCreateInput = {
+    many?: ManyRequiredCreateNestedManyWithoutOneInput
     int: number
     optionalInt?: number | null
     float: number
@@ -14953,11 +15154,11 @@ export namespace Prisma {
     optionalEnum?: ABeautifulEnum | null
     boolean: boolean
     optionalBoolean?: boolean | null
-    many?: ManyRequiredCreateNestedManyWithoutOneInput
   }
 
   export type OneOptionalUncheckedCreateInput = {
     id?: number
+    many?: ManyRequiredUncheckedCreateNestedManyWithoutOneInput
     int: number
     optionalInt?: number | null
     float: number
@@ -14970,10 +15171,10 @@ export namespace Prisma {
     optionalEnum?: ABeautifulEnum | null
     boolean: boolean
     optionalBoolean?: boolean | null
-    many?: ManyRequiredUncheckedCreateNestedManyWithoutOneInput
   }
 
   export type OneOptionalUpdateInput = {
+    many?: ManyRequiredUpdateManyWithoutOneInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -14986,11 +15187,11 @@ export namespace Prisma {
     optionalEnum?: NullableEnumABeautifulEnumFieldUpdateOperationsInput | ABeautifulEnum | null
     boolean?: BoolFieldUpdateOperationsInput | boolean
     optionalBoolean?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    many?: ManyRequiredUpdateManyWithoutOneInput
   }
 
   export type OneOptionalUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
+    many?: ManyRequiredUncheckedUpdateManyWithoutOneInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -15003,7 +15204,6 @@ export namespace Prisma {
     optionalEnum?: NullableEnumABeautifulEnumFieldUpdateOperationsInput | ABeautifulEnum | null
     boolean?: BoolFieldUpdateOperationsInput | boolean
     optionalBoolean?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    many?: ManyRequiredUncheckedUpdateManyWithoutOneInput
   }
 
   export type OneOptionalCreateManyInput = {
@@ -15054,6 +15254,7 @@ export namespace Prisma {
   }
 
   export type ManyRequiredCreateInput = {
+    one?: OneOptionalCreateNestedOneWithoutManyInput
     int: number
     optionalInt?: number | null
     float: number
@@ -15066,7 +15267,6 @@ export namespace Prisma {
     optionalEnum?: ABeautifulEnum | null
     boolean: boolean
     optionalBoolean?: boolean | null
-    one?: OneOptionalCreateNestedOneWithoutManyInput
   }
 
   export type ManyRequiredUncheckedCreateInput = {
@@ -15087,6 +15287,7 @@ export namespace Prisma {
   }
 
   export type ManyRequiredUpdateInput = {
+    one?: OneOptionalUpdateOneWithoutManyInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -15099,7 +15300,6 @@ export namespace Prisma {
     optionalEnum?: NullableEnumABeautifulEnumFieldUpdateOperationsInput | ABeautifulEnum | null
     boolean?: BoolFieldUpdateOperationsInput | boolean
     optionalBoolean?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    one?: OneOptionalUpdateOneWithoutManyInput
   }
 
   export type ManyRequiredUncheckedUpdateInput = {
@@ -15169,6 +15369,7 @@ export namespace Prisma {
   }
 
   export type OptionalSide1CreateInput = {
+    opti?: OptionalSide2CreateNestedOneWithoutOptiInput
     int: number
     optionalInt?: number | null
     float: number
@@ -15181,7 +15382,6 @@ export namespace Prisma {
     optionalEnum?: ABeautifulEnum | null
     boolean: boolean
     optionalBoolean?: boolean | null
-    opti?: OptionalSide2CreateNestedOneWithoutOptiInput
   }
 
   export type OptionalSide1UncheckedCreateInput = {
@@ -15202,6 +15402,7 @@ export namespace Prisma {
   }
 
   export type OptionalSide1UpdateInput = {
+    opti?: OptionalSide2UpdateOneWithoutOptiInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -15214,7 +15415,6 @@ export namespace Prisma {
     optionalEnum?: NullableEnumABeautifulEnumFieldUpdateOperationsInput | ABeautifulEnum | null
     boolean?: BoolFieldUpdateOperationsInput | boolean
     optionalBoolean?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    opti?: OptionalSide2UpdateOneWithoutOptiInput
   }
 
   export type OptionalSide1UncheckedUpdateInput = {
@@ -15284,6 +15484,7 @@ export namespace Prisma {
   }
 
   export type OptionalSide2CreateInput = {
+    opti?: OptionalSide1CreateNestedOneWithoutOptiInput
     int: number
     optionalInt?: number | null
     float: number
@@ -15296,11 +15497,11 @@ export namespace Prisma {
     optionalEnum?: ABeautifulEnum | null
     boolean: boolean
     optionalBoolean?: boolean | null
-    opti?: OptionalSide1CreateNestedOneWithoutOptiInput
   }
 
   export type OptionalSide2UncheckedCreateInput = {
     id?: number
+    opti?: OptionalSide1UncheckedCreateNestedOneWithoutOptiInput
     int: number
     optionalInt?: number | null
     float: number
@@ -15313,10 +15514,10 @@ export namespace Prisma {
     optionalEnum?: ABeautifulEnum | null
     boolean: boolean
     optionalBoolean?: boolean | null
-    opti?: OptionalSide1UncheckedCreateNestedOneWithoutOptiInput
   }
 
   export type OptionalSide2UpdateInput = {
+    opti?: OptionalSide1UpdateOneWithoutOptiInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -15329,11 +15530,11 @@ export namespace Prisma {
     optionalEnum?: NullableEnumABeautifulEnumFieldUpdateOperationsInput | ABeautifulEnum | null
     boolean?: BoolFieldUpdateOperationsInput | boolean
     optionalBoolean?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    opti?: OptionalSide1UpdateOneWithoutOptiInput
   }
 
   export type OptionalSide2UncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
+    opti?: OptionalSide1UncheckedUpdateOneWithoutOptiInput
     int?: IntFieldUpdateOperationsInput | number
     optionalInt?: NullableIntFieldUpdateOperationsInput | number | null
     float?: FloatFieldUpdateOperationsInput | number
@@ -15346,7 +15547,6 @@ export namespace Prisma {
     optionalEnum?: NullableEnumABeautifulEnumFieldUpdateOperationsInput | ABeautifulEnum | null
     boolean?: BoolFieldUpdateOperationsInput | boolean
     optionalBoolean?: NullableBoolFieldUpdateOperationsInput | boolean | null
-    opti?: OptionalSide1UncheckedUpdateOneWithoutOptiInput
   }
 
   export type OptionalSide2CreateManyInput = {
@@ -15932,10 +16132,6 @@ export namespace Prisma {
 
   export type JsonFilterBase = {
     equals?: JsonNullValueFilter | InputJsonValue
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
     path?: Array<string>
     string_contains?: string
     string_starts_with?: string
@@ -15943,6 +16139,10 @@ export namespace Prisma {
     array_contains?: InputJsonValue | null
     array_starts_with?: InputJsonValue | null
     array_ends_with?: InputJsonValue | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
     not?: JsonNullValueFilter | InputJsonValue
   }
   export type JsonNullableFilter = 
@@ -15954,10 +16154,6 @@ export namespace Prisma {
 
   export type JsonNullableFilterBase = {
     equals?: JsonNullValueFilter | InputJsonValue
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
     path?: Array<string>
     string_contains?: string
     string_starts_with?: string
@@ -15965,6 +16161,10 @@ export namespace Prisma {
     array_contains?: InputJsonValue | null
     array_starts_with?: InputJsonValue | null
     array_ends_with?: InputJsonValue | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
     not?: JsonNullValueFilter | InputJsonValue
   }
 
@@ -16116,10 +16316,6 @@ export namespace Prisma {
 
   export type JsonWithAggregatesFilterBase = {
     equals?: JsonNullValueFilter | InputJsonValue
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
     path?: Array<string>
     string_contains?: string
     string_starts_with?: string
@@ -16127,6 +16323,10 @@ export namespace Prisma {
     array_contains?: InputJsonValue | null
     array_starts_with?: InputJsonValue | null
     array_ends_with?: InputJsonValue | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
     not?: JsonNullValueFilter | InputJsonValue
     _count?: NestedIntFilter
     _min?: NestedJsonFilter
@@ -16141,10 +16341,6 @@ export namespace Prisma {
 
   export type JsonNullableWithAggregatesFilterBase = {
     equals?: JsonNullValueFilter | InputJsonValue
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
     path?: Array<string>
     string_contains?: string
     string_starts_with?: string
@@ -16152,6 +16348,10 @@ export namespace Prisma {
     array_contains?: InputJsonValue | null
     array_starts_with?: InputJsonValue | null
     array_ends_with?: InputJsonValue | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
     not?: JsonNullValueFilter | InputJsonValue
     _count?: NestedIntNullableFilter
     _min?: NestedJsonNullableFilter
@@ -16779,6 +16979,8 @@ export namespace Prisma {
 
   export type BytesFilter = {
     equals?: Buffer
+    in?: Enumerable<Buffer>
+    notIn?: Enumerable<Buffer>
     not?: NestedBytesFilter | Buffer
   }
 
@@ -16807,6 +17009,8 @@ export namespace Prisma {
 
   export type BytesWithAggregatesFilter = {
     equals?: Buffer
+    in?: Enumerable<Buffer>
+    notIn?: Enumerable<Buffer>
     not?: NestedBytesWithAggregatesFilter | Buffer
     _count?: NestedIntFilter
     _min?: NestedBytesFilter
@@ -16927,10 +17131,10 @@ export namespace Prisma {
     connectOrCreate?: Enumerable<PostCreateOrConnectWithoutAuthorInput>
     upsert?: Enumerable<PostUpsertWithWhereUniqueWithoutAuthorInput>
     createMany?: PostCreateManyAuthorInputEnvelope
-    connect?: Enumerable<PostWhereUniqueInput>
     set?: Enumerable<PostWhereUniqueInput>
     disconnect?: Enumerable<PostWhereUniqueInput>
     delete?: Enumerable<PostWhereUniqueInput>
+    connect?: Enumerable<PostWhereUniqueInput>
     update?: Enumerable<PostUpdateWithWhereUniqueWithoutAuthorInput>
     updateMany?: Enumerable<PostUpdateManyWithWhereWithoutAuthorInput>
     deleteMany?: Enumerable<PostScalarWhereInput>
@@ -16941,10 +17145,10 @@ export namespace Prisma {
     connectOrCreate?: Enumerable<PostCreateOrConnectWithoutAuthorInput>
     upsert?: Enumerable<PostUpsertWithWhereUniqueWithoutAuthorInput>
     createMany?: PostCreateManyAuthorInputEnvelope
-    connect?: Enumerable<PostWhereUniqueInput>
     set?: Enumerable<PostWhereUniqueInput>
     disconnect?: Enumerable<PostWhereUniqueInput>
     delete?: Enumerable<PostWhereUniqueInput>
+    connect?: Enumerable<PostWhereUniqueInput>
     update?: Enumerable<PostUpdateWithWhereUniqueWithoutAuthorInput>
     updateMany?: Enumerable<PostUpdateManyWithWhereWithoutAuthorInput>
     deleteMany?: Enumerable<PostScalarWhereInput>
@@ -16956,14 +17160,33 @@ export namespace Prisma {
     connect?: Enumerable<NWhereUniqueInput>
   }
 
+  export type NUncheckedCreateNestedManyWithoutMInput = {
+    create?: XOR<Enumerable<NCreateWithoutMInput>, Enumerable<NUncheckedCreateWithoutMInput>>
+    connectOrCreate?: Enumerable<NCreateOrConnectWithoutMInput>
+    connect?: Enumerable<NWhereUniqueInput>
+  }
+
   export type NUpdateManyWithoutMInput = {
     create?: XOR<Enumerable<NCreateWithoutMInput>, Enumerable<NUncheckedCreateWithoutMInput>>
     connectOrCreate?: Enumerable<NCreateOrConnectWithoutMInput>
     upsert?: Enumerable<NUpsertWithWhereUniqueWithoutMInput>
-    connect?: Enumerable<NWhereUniqueInput>
     set?: Enumerable<NWhereUniqueInput>
     disconnect?: Enumerable<NWhereUniqueInput>
     delete?: Enumerable<NWhereUniqueInput>
+    connect?: Enumerable<NWhereUniqueInput>
+    update?: Enumerable<NUpdateWithWhereUniqueWithoutMInput>
+    updateMany?: Enumerable<NUpdateManyWithWhereWithoutMInput>
+    deleteMany?: Enumerable<NScalarWhereInput>
+  }
+
+  export type NUncheckedUpdateManyWithoutMInput = {
+    create?: XOR<Enumerable<NCreateWithoutMInput>, Enumerable<NUncheckedCreateWithoutMInput>>
+    connectOrCreate?: Enumerable<NCreateOrConnectWithoutMInput>
+    upsert?: Enumerable<NUpsertWithWhereUniqueWithoutMInput>
+    set?: Enumerable<NWhereUniqueInput>
+    disconnect?: Enumerable<NWhereUniqueInput>
+    delete?: Enumerable<NWhereUniqueInput>
+    connect?: Enumerable<NWhereUniqueInput>
     update?: Enumerable<NUpdateWithWhereUniqueWithoutMInput>
     updateMany?: Enumerable<NUpdateManyWithWhereWithoutMInput>
     deleteMany?: Enumerable<NScalarWhereInput>
@@ -16975,14 +17198,33 @@ export namespace Prisma {
     connect?: Enumerable<MWhereUniqueInput>
   }
 
+  export type MUncheckedCreateNestedManyWithoutNInput = {
+    create?: XOR<Enumerable<MCreateWithoutNInput>, Enumerable<MUncheckedCreateWithoutNInput>>
+    connectOrCreate?: Enumerable<MCreateOrConnectWithoutNInput>
+    connect?: Enumerable<MWhereUniqueInput>
+  }
+
   export type MUpdateManyWithoutNInput = {
     create?: XOR<Enumerable<MCreateWithoutNInput>, Enumerable<MUncheckedCreateWithoutNInput>>
     connectOrCreate?: Enumerable<MCreateOrConnectWithoutNInput>
     upsert?: Enumerable<MUpsertWithWhereUniqueWithoutNInput>
-    connect?: Enumerable<MWhereUniqueInput>
     set?: Enumerable<MWhereUniqueInput>
     disconnect?: Enumerable<MWhereUniqueInput>
     delete?: Enumerable<MWhereUniqueInput>
+    connect?: Enumerable<MWhereUniqueInput>
+    update?: Enumerable<MUpdateWithWhereUniqueWithoutNInput>
+    updateMany?: Enumerable<MUpdateManyWithWhereWithoutNInput>
+    deleteMany?: Enumerable<MScalarWhereInput>
+  }
+
+  export type MUncheckedUpdateManyWithoutNInput = {
+    create?: XOR<Enumerable<MCreateWithoutNInput>, Enumerable<MUncheckedCreateWithoutNInput>>
+    connectOrCreate?: Enumerable<MCreateOrConnectWithoutNInput>
+    upsert?: Enumerable<MUpsertWithWhereUniqueWithoutNInput>
+    set?: Enumerable<MWhereUniqueInput>
+    disconnect?: Enumerable<MWhereUniqueInput>
+    delete?: Enumerable<MWhereUniqueInput>
+    connect?: Enumerable<MWhereUniqueInput>
     update?: Enumerable<MUpdateWithWhereUniqueWithoutNInput>
     updateMany?: Enumerable<MUpdateManyWithWhereWithoutNInput>
     deleteMany?: Enumerable<MScalarWhereInput>
@@ -17007,10 +17249,10 @@ export namespace Prisma {
     connectOrCreate?: Enumerable<ManyRequiredCreateOrConnectWithoutOneInput>
     upsert?: Enumerable<ManyRequiredUpsertWithWhereUniqueWithoutOneInput>
     createMany?: ManyRequiredCreateManyOneInputEnvelope
-    connect?: Enumerable<ManyRequiredWhereUniqueInput>
     set?: Enumerable<ManyRequiredWhereUniqueInput>
     disconnect?: Enumerable<ManyRequiredWhereUniqueInput>
     delete?: Enumerable<ManyRequiredWhereUniqueInput>
+    connect?: Enumerable<ManyRequiredWhereUniqueInput>
     update?: Enumerable<ManyRequiredUpdateWithWhereUniqueWithoutOneInput>
     updateMany?: Enumerable<ManyRequiredUpdateManyWithWhereWithoutOneInput>
     deleteMany?: Enumerable<ManyRequiredScalarWhereInput>
@@ -17021,10 +17263,10 @@ export namespace Prisma {
     connectOrCreate?: Enumerable<ManyRequiredCreateOrConnectWithoutOneInput>
     upsert?: Enumerable<ManyRequiredUpsertWithWhereUniqueWithoutOneInput>
     createMany?: ManyRequiredCreateManyOneInputEnvelope
-    connect?: Enumerable<ManyRequiredWhereUniqueInput>
     set?: Enumerable<ManyRequiredWhereUniqueInput>
     disconnect?: Enumerable<ManyRequiredWhereUniqueInput>
     delete?: Enumerable<ManyRequiredWhereUniqueInput>
+    connect?: Enumerable<ManyRequiredWhereUniqueInput>
     update?: Enumerable<ManyRequiredUpdateWithWhereUniqueWithoutOneInput>
     updateMany?: Enumerable<ManyRequiredUpdateManyWithWhereWithoutOneInput>
     deleteMany?: Enumerable<ManyRequiredScalarWhereInput>
@@ -17040,9 +17282,9 @@ export namespace Prisma {
     create?: XOR<OneOptionalCreateWithoutManyInput, OneOptionalUncheckedCreateWithoutManyInput>
     connectOrCreate?: OneOptionalCreateOrConnectWithoutManyInput
     upsert?: OneOptionalUpsertWithoutManyInput
-    connect?: OneOptionalWhereUniqueInput
     disconnect?: boolean
     delete?: boolean
+    connect?: OneOptionalWhereUniqueInput
     update?: XOR<OneOptionalUpdateWithoutManyInput, OneOptionalUncheckedUpdateWithoutManyInput>
   }
 
@@ -17056,9 +17298,9 @@ export namespace Prisma {
     create?: XOR<OptionalSide2CreateWithoutOptiInput, OptionalSide2UncheckedCreateWithoutOptiInput>
     connectOrCreate?: OptionalSide2CreateOrConnectWithoutOptiInput
     upsert?: OptionalSide2UpsertWithoutOptiInput
-    connect?: OptionalSide2WhereUniqueInput
     disconnect?: boolean
     delete?: boolean
+    connect?: OptionalSide2WhereUniqueInput
     update?: XOR<OptionalSide2UpdateWithoutOptiInput, OptionalSide2UncheckedUpdateWithoutOptiInput>
   }
 
@@ -17078,9 +17320,9 @@ export namespace Prisma {
     create?: XOR<OptionalSide1CreateWithoutOptiInput, OptionalSide1UncheckedCreateWithoutOptiInput>
     connectOrCreate?: OptionalSide1CreateOrConnectWithoutOptiInput
     upsert?: OptionalSide1UpsertWithoutOptiInput
-    connect?: OptionalSide1WhereUniqueInput
     disconnect?: boolean
     delete?: boolean
+    connect?: OptionalSide1WhereUniqueInput
     update?: XOR<OptionalSide1UpdateWithoutOptiInput, OptionalSide1UncheckedUpdateWithoutOptiInput>
   }
 
@@ -17088,9 +17330,9 @@ export namespace Prisma {
     create?: XOR<OptionalSide1CreateWithoutOptiInput, OptionalSide1UncheckedCreateWithoutOptiInput>
     connectOrCreate?: OptionalSide1CreateOrConnectWithoutOptiInput
     upsert?: OptionalSide1UpsertWithoutOptiInput
-    connect?: OptionalSide1WhereUniqueInput
     disconnect?: boolean
     delete?: boolean
+    connect?: OptionalSide1WhereUniqueInput
     update?: XOR<OptionalSide1UpdateWithoutOptiInput, OptionalSide1UncheckedUpdateWithoutOptiInput>
   }
 
@@ -17349,10 +17591,6 @@ export namespace Prisma {
 
   export type NestedJsonFilterBase = {
     equals?: JsonNullValueFilter | InputJsonValue
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
     path?: Array<string>
     string_contains?: string
     string_starts_with?: string
@@ -17360,6 +17598,10 @@ export namespace Prisma {
     array_contains?: InputJsonValue | null
     array_starts_with?: InputJsonValue | null
     array_ends_with?: InputJsonValue | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
     not?: JsonNullValueFilter | InputJsonValue
   }
   export type NestedJsonNullableFilter = 
@@ -17371,10 +17613,6 @@ export namespace Prisma {
 
   export type NestedJsonNullableFilterBase = {
     equals?: JsonNullValueFilter | InputJsonValue
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
     path?: Array<string>
     string_contains?: string
     string_starts_with?: string
@@ -17382,6 +17620,10 @@ export namespace Prisma {
     array_contains?: InputJsonValue | null
     array_starts_with?: InputJsonValue | null
     array_ends_with?: InputJsonValue | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
     not?: JsonNullValueFilter | InputJsonValue
   }
 
@@ -17469,11 +17711,15 @@ export namespace Prisma {
 
   export type NestedBytesFilter = {
     equals?: Buffer
+    in?: Enumerable<Buffer>
+    notIn?: Enumerable<Buffer>
     not?: NestedBytesFilter | Buffer
   }
 
   export type NestedBytesWithAggregatesFilter = {
     equals?: Buffer
+    in?: Enumerable<Buffer>
+    notIn?: Enumerable<Buffer>
     not?: NestedBytesWithAggregatesFilter | Buffer
     _count?: NestedIntFilter
     _min?: NestedBytesFilter

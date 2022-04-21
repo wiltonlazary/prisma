@@ -1,6 +1,7 @@
-import { GeneratorConfig } from '@prisma/generator-helper'
+import type { GeneratorConfig } from '@prisma/generator-helper'
 import indent from 'indent-string'
-import { DMMFClass } from '../../runtime/dmmf'
+
+import type { DMMFHelper } from '../../runtime/dmmf'
 import { DMMF } from '../../runtime/dmmf-types'
 import {
   getAggregateArgsName,
@@ -11,26 +12,23 @@ import {
   getGroupByArgsName,
   getGroupByPayloadName,
   getModelArgName,
+  getReturnType,
   getSelectName,
-  getSelectReturnType,
   Projection,
 } from '../utils'
 import { ArgsType } from './Args'
 import { TAB_SIZE } from './constants'
-import { Generatable, TS } from './Generatable'
-import {
-  ExportCollector,
-  getArgs,
-  getGenericMethod,
-  getMethodJSDoc,
-} from './helpers'
+import type { Generatable } from './Generatable'
+import { TS } from './Generatable'
+import type { ExportCollector } from './helpers'
+import { getArgs, getGenericMethod, getMethodJSDoc } from './helpers'
 import { OutputType } from './Output'
 import { PayloadType } from './Payload'
 
 export class Count implements Generatable {
   constructor(
     protected readonly type: DMMF.OutputType,
-    protected readonly dmmf: DMMFClass,
+    protected readonly dmmf: DMMFHelper,
     protected readonly generator?: GeneratorConfig,
     protected readonly collector?: ExportCollector,
   ) {}
@@ -58,18 +56,14 @@ export type ${getSelectName(name)} = {
 ${indent(
   type.fields
     .map(
-      (f) =>
-        `${f.name}?: boolean` +
-        (f.outputType.location === 'outputObjectTypes'
-          ? ` | ${getFieldArgName(f)}`
-          : ''),
+      (f) => `${f.name}?: boolean` + (f.outputType.location === 'outputObjectTypes' ? ` | ${getFieldArgName(f)}` : ''),
     )
     .join('\n'),
   TAB_SIZE,
 )}
 }
 
-${new PayloadType(outputType, true).toTS()}
+${new PayloadType(outputType, false).toTS()}
 
 ${/*new CountDelegate(outputType, this.dmmf, this.generator).toTS()*/ ''}
 
@@ -82,7 +76,7 @@ ${this.argsTypes.map(TS).join('\n')}
 class CountDelegate implements Generatable {
   constructor(
     protected readonly outputType: OutputType,
-    protected readonly dmmf: DMMFClass,
+    protected readonly dmmf: DMMFHelper,
     protected readonly generator?: GeneratorConfig,
   ) {}
   public toTS(): string {
@@ -91,24 +85,16 @@ class CountDelegate implements Generatable {
     if (!mapping) {
       return ''
     }
-    const model = this.dmmf.modelMap[name]
+    const modelOrType = this.dmmf.typeAndModelMap[name]
 
     const actions = Object.entries(mapping).filter(
-      ([key, value]) =>
-        key !== 'model' &&
-        key !== 'plural' &&
-        key !== 'aggregate' &&
-        key !== 'groupBy' &&
-        value,
+      ([key, value]) => key !== 'model' && key !== 'plural' && key !== 'aggregate' && key !== 'groupBy' && value,
     )
     const groupByArgsName = getGroupByArgsName(name)
     const countArgsName = getModelArgName(name, DMMF.ModelAction.count)
     return `\
 type ${countArgsName} = Merge<
-  Omit<${getModelArgName(
-    name,
-    DMMF.ModelAction.findMany,
-  )}, 'select' | 'include'> & {
+  Omit<${getModelArgName(name, DMMF.ModelAction.findMany)}, 'select' | 'include'> & {
     select?: ${getCountAggregateInputName(name)} | true
   }
 >
@@ -118,16 +104,16 @@ ${indent(
   actions
     .map(
       ([actionName]: [any, any]): string =>
-        `${getMethodJSDoc(actionName, mapping, model)}
+        `${getMethodJSDoc(actionName, mapping, modelOrType)}
 ${actionName}${getGenericMethod(name, actionName)}(
   ${getArgs(name, actionName)}
-): ${getSelectReturnType({ name, actionName, projection: Projection.select })}`,
+): ${getReturnType({ name, actionName, projection: Projection.select })}`,
     )
     .join('\n\n'),
   TAB_SIZE,
 )}
 
-${indent(getMethodJSDoc(DMMF.ModelAction.count, mapping, model), TAB_SIZE)}
+${indent(getMethodJSDoc(DMMF.ModelAction.count, mapping, modelOrType), TAB_SIZE)}
   count<T extends ${countArgsName}>(
     args?: Subset<T, ${countArgsName}>,
   ): PrismaPromise<
@@ -138,14 +124,12 @@ ${indent(getMethodJSDoc(DMMF.ModelAction.count, mapping, model), TAB_SIZE)}
       : number
   >
 
-${indent(getMethodJSDoc(DMMF.ModelAction.aggregate, mapping, model), TAB_SIZE)}
-  aggregate<T extends ${getAggregateArgsName(
-    name,
-  )}>(args: Subset<T, ${getAggregateArgsName(
+${indent(getMethodJSDoc(DMMF.ModelAction.aggregate, mapping, modelOrType), TAB_SIZE)}
+  aggregate<T extends ${getAggregateArgsName(name)}>(args: Subset<T, ${getAggregateArgsName(
       name,
     )}>): PrismaPromise<${getAggregateGetName(name)}<T>>
 
-${indent(getMethodJSDoc(DMMF.ModelAction.groupBy, mapping, model), TAB_SIZE)}
+${indent(getMethodJSDoc(DMMF.ModelAction.groupBy, mapping, modelOrType), TAB_SIZE)}
   groupBy<
     T extends ${groupByArgsName},
     HasSelectOrTake extends Or<
@@ -236,13 +220,9 @@ ${indent(
     .map((f) => {
       const fieldTypeName = (f.outputType.type as DMMF.OutputType).name
       return `
-${f.name}<T extends ${getFieldArgName(
-        f,
-      )} = {}>(args?: Subset<T, ${getFieldArgName(f)}>): ${getSelectReturnType({
+${f.name}<T extends ${getFieldArgName(f)}>(args?: Subset<T, ${getFieldArgName(f)}>): ${getReturnType({
         name: fieldTypeName,
-        actionName: f.outputType.isList
-          ? DMMF.ModelAction.findMany
-          : DMMF.ModelAction.findUnique,
+        actionName: f.outputType.isList ? DMMF.ModelAction.findMany : DMMF.ModelAction.findUnique,
         hideCondition: false,
         isField: true,
         renderPromise: true,

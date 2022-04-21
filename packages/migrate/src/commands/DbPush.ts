@@ -1,27 +1,24 @@
+import type { Command } from '@prisma/sdk'
 import {
   arg,
-  Command,
   format,
-  HelpError,
-  isError,
-  getSchemaPath,
-  logger,
-  isCi,
+  formatms,
   getCommandWithExecutor,
+  HelpError,
+  isCi,
+  isError,
+  loadEnvFile,
+  logger,
 } from '@prisma/sdk'
-import path from 'path'
 import chalk from 'chalk'
 import prompt from 'prompts'
+
 import { Migrate } from '../Migrate'
+import type { EngineResults } from '../types'
 import { ensureDatabaseExists, getDbInfo } from '../utils/ensureDatabaseExists'
-import { formatms } from '../utils/formatms'
-import {
-  DbPushIgnoreWarningsWithFlagError,
-  DbPushForceFlagRenamedError,
-  NoSchemaFoundError,
-} from '../utils/errors'
+import { DbPushForceFlagRenamedError, DbPushIgnoreWarningsWithFlagError } from '../utils/errors'
+import { getSchemaPathAndPrint } from '../utils/getSchemaPathAndPrint'
 import { printDatasource } from '../utils/printDatasource'
-import { EngineResults } from '../types'
 
 export class DbPush implements Command {
   public static new(): DbPush {
@@ -29,9 +26,7 @@ export class DbPush implements Command {
   }
 
   private static help = format(`
-${
-  process.platform === 'win32' ? '' : chalk.bold('🙌  ')
-}Push the state from your Prisma schema to your database
+${process.platform === 'win32' ? '' : chalk.bold('🙌  ')}Push the state from your Prisma schema to your database
 
 ${chalk.bold('Usage')}
 
@@ -94,17 +89,9 @@ You can now remove the ${chalk.red('--preview-feature')} flag.`)
       throw new DbPushForceFlagRenamedError()
     }
 
-    const schemaPath = await getSchemaPath(args['--schema'])
+    loadEnvFile(args['--schema'], true)
 
-    if (!schemaPath) {
-      throw new NoSchemaFoundError()
-    }
-
-    console.info(
-      chalk.dim(
-        `Prisma schema loaded from ${path.relative(process.cwd(), schemaPath)}`,
-      ),
-    )
+    const schemaPath = await getSchemaPathAndPrint(args['--schema'])
 
     await printDatasource(schemaPath)
 
@@ -112,11 +99,16 @@ You can now remove the ${chalk.red('--preview-feature')} flag.`)
 
     const migrate = new Migrate(schemaPath)
 
-    // Automatically create the database if it doesn't exist
-    const wasDbCreated = await ensureDatabaseExists('push', true, schemaPath)
-    if (wasDbCreated) {
-      console.info()
-      console.info(wasDbCreated)
+    try {
+      // Automatically create the database if it doesn't exist
+      const wasDbCreated = await ensureDatabaseExists('push', true, schemaPath)
+      if (wasDbCreated) {
+        console.info() // empty line
+        console.info(wasDbCreated)
+      }
+    } catch (e) {
+      console.info() // empty line
+      throw e
     }
 
     let wasDatabaseReset = false
@@ -133,9 +125,7 @@ You can now remove the ${chalk.red('--preview-feature')} flag.`)
           `The ${dbInfo.dbType} ${dbInfo.schemaWord} "${dbInfo.dbName}" from "${dbInfo.dbLocation}" was successfully reset.`,
         )
       } else {
-        console.info(
-          `The ${dbInfo.dbType} ${dbInfo.schemaWord} was successfully reset.`,
-        )
+        console.info(`The ${dbInfo.dbType} ${dbInfo.schemaWord} was successfully reset.`)
       }
       wasDatabaseReset = true
     }
@@ -153,9 +143,7 @@ You can now remove the ${chalk.red('--preview-feature')} flag.`)
 
     if (migration.unexecutable && migration.unexecutable.length > 0) {
       const messages: string[] = []
-      messages.push(
-        `${chalk.bold.red('\n⚠️ We found changes that cannot be executed:\n')}`,
-      )
+      messages.push(`${chalk.bold.red('\n⚠️ We found changes that cannot be executed:\n')}`)
       for (const item of migration.unexecutable) {
         messages.push(`${chalk(`  • ${item}`)}`)
       }
@@ -199,9 +187,7 @@ ${chalk.bold.redBright('All data will be lost.')}
             `The ${dbInfo.dbType} ${dbInfo.schemaWord} "${dbInfo.dbName}" from "${dbInfo.dbLocation}" was successfully reset.`,
           )
         } else {
-          console.info(
-            `The ${dbInfo.dbType} ${dbInfo.schemaWord} was successfully reset.`,
-          )
+          console.info(`The ${dbInfo.dbType} ${dbInfo.schemaWord} was successfully reset.`)
         }
         wasDatabaseReset = true
 
@@ -214,11 +200,7 @@ ${chalk.bold.redBright('All data will be lost.')}
     }
 
     if (migration.warnings && migration.warnings.length > 0) {
-      console.info(
-        chalk.bold.yellow(
-          `\n⚠️  There might be data loss when applying the changes:\n`,
-        ),
-      )
+      console.info(chalk.bold.yellow(`\n⚠️  There might be data loss when applying the changes:\n`))
 
       for (const warning of migration.warnings) {
         console.info(chalk(`  • ${warning}`))
@@ -260,19 +242,13 @@ ${chalk.bold.redBright('All data will be lost.')}
 
     migrate.stop()
 
-    if (
-      !wasDatabaseReset &&
-      migration.warnings.length === 0 &&
-      migration.executedSteps === 0
-    ) {
+    if (!wasDatabaseReset && migration.warnings.length === 0 && migration.executedSteps === 0) {
       console.info(`\nThe database is already in sync with the Prisma schema.`)
     } else {
       console.info(
         `\n${
           process.platform === 'win32' ? '' : '🚀  '
-        }Your database is now in sync with your schema. Done in ${formatms(
-          Date.now() - before,
-        )}`,
+        }Your database is now in sync with your schema. Done in ${formatms(Date.now() - before)}`,
       )
     }
 

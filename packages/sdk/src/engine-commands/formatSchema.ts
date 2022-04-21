@@ -2,6 +2,7 @@ import Debug from '@prisma/debug'
 import { BinaryType } from '@prisma/fetch-engine'
 import execa from 'execa'
 import fs from 'fs'
+
 import { resolveBinary } from '../resolveBinary'
 
 const debug = Debug('prisma:formatSchema')
@@ -13,13 +14,7 @@ const MAX_BUFFER = 1_000_000_000
 // or a path to the schema file
 export async function formatSchema({ schema }: { schema: string })
 export async function formatSchema({ schemaPath }: { schemaPath: string })
-export async function formatSchema({
-  schemaPath,
-  schema,
-}: {
-  schemaPath?: string
-  schema?: string
-}): Promise<string> {
+export async function formatSchema({ schemaPath, schema }: { schemaPath?: string; schema?: string }): Promise<string> {
   if (!schema && !schemaPath) {
     throw new Error(`Parameter schema or schemaPath must be passed.`)
   }
@@ -36,6 +31,11 @@ export async function formatSchema({
   } as execa.Options
 
   let result
+
+  if (process.env.FORCE_PANIC_PRISMA_FMT) {
+    result = await execa(prismaFmtPath, ['debug-panic'], options)
+  }
+
   if (schemaPath) {
     if (!fs.existsSync(schemaPath)) {
       throw new Error(`Schema at ${schemaPath} does not exist.`)

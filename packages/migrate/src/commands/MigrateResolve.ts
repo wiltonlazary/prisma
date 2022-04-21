@@ -1,24 +1,14 @@
-import {
-  arg,
-  Command,
-  format,
-  getSchemaPath,
-  HelpError,
-  isError,
-  getCommandWithExecutor,
-  link,
-} from '@prisma/sdk'
+import type { Command } from '@prisma/sdk'
+import { arg, format, getCommandWithExecutor, HelpError, isError, link, loadEnvFile } from '@prisma/sdk'
 import chalk from 'chalk'
-import path from 'path'
-import { ensureCanConnectToDatabase } from '../utils/ensureDatabaseExists'
+
 import { Migrate } from '../Migrate'
-import {
-  ExperimentalFlagWithNewMigrateError,
-  EarlyAccessFeatureFlagWithNewMigrateError,
-} from '../utils/flagErrors'
-import { NoSchemaFoundError } from '../utils/errors'
 import { throwUpgradeErrorIfOldMigrate } from '../utils/detectOldMigrate'
+import { ensureCanConnectToDatabase } from '../utils/ensureDatabaseExists'
+import { EarlyAccessFeatureFlagWithMigrateError, ExperimentalFlagWithMigrateError } from '../utils/flagErrors'
+import { getSchemaPathAndPrint } from '../utils/getSchemaPathAndPrint'
 import { printDatasource } from '../utils/printDatasource'
+
 export class MigrateResolve implements Command {
   public static new(): MigrateResolve {
     return new MigrateResolve()
@@ -32,9 +22,7 @@ Resolve issues with database migrations in deployment databases:
 
 Run "prisma migrate status" to identify if you need to use resolve.
 
-Read more about resolving migration history issues: ${link(
-    'https://pris.ly/d/migrate-resolve',
-  )}
+Read more about resolving migration history issues: ${link('https://pris.ly/d/migrate-resolve')}
  
 ${chalk.bold('Usage')}
 
@@ -50,19 +38,13 @@ ${chalk.bold('Options')}
 ${chalk.bold('Examples')}
 
   Update migrations table, recording a specific migration as applied 
-  ${chalk.dim(
-    '$',
-  )} prisma migrate resolve --applied 20201231000000_add_users_table
+  ${chalk.dim('$')} prisma migrate resolve --applied 20201231000000_add_users_table
 
   Update migrations table, recording a specific migration as rolled back
-  ${chalk.dim(
-    '$',
-  )} prisma migrate resolve --rolled-back 20201231000000_add_users_table
+  ${chalk.dim('$')} prisma migrate resolve --rolled-back 20201231000000_add_users_table
 
   Specify a schema
-  ${chalk.dim(
-    '$',
-  )} prisma migrate resolve --rolled-back 20201231000000_add_users_table --schema=./schema.prisma
+  ${chalk.dim('$')} prisma migrate resolve --rolled-back 20201231000000_add_users_table --schema=./schema.prisma
 `)
 
   public async parse(argv: string[]): Promise<string | Error> {
@@ -90,24 +72,16 @@ ${chalk.bold('Examples')}
     }
 
     if (args['--experimental']) {
-      throw new ExperimentalFlagWithNewMigrateError()
+      throw new ExperimentalFlagWithMigrateError()
     }
 
     if (args['--early-access-feature']) {
-      throw new EarlyAccessFeatureFlagWithNewMigrateError()
+      throw new EarlyAccessFeatureFlagWithMigrateError()
     }
 
-    const schemaPath = await getSchemaPath(args['--schema'])
+    loadEnvFile(args['--schema'], true)
 
-    if (!schemaPath) {
-      throw new NoSchemaFoundError()
-    }
-
-    console.info(
-      chalk.dim(
-        `Prisma schema loaded from ${path.relative(process.cwd(), schemaPath)}`,
-      ),
-    )
+    const schemaPath = await getSchemaPathAndPrint(args['--schema'])
 
     await printDatasource(schemaPath)
 
@@ -117,16 +91,8 @@ ${chalk.bold('Examples')}
     if (!args['--applied'] && !args['--rolled-back']) {
       throw new Error(
         `--applied or --rolled-back must be part of the command like:
-${chalk.bold.green(
-  getCommandWithExecutor(
-    'prisma migrate resolve --applied 20201231000000_example',
-  ),
-)}
-${chalk.bold.green(
-  getCommandWithExecutor(
-    'prisma migrate resolve --rolled-back 20201231000000_example',
-  ),
-)}`,
+${chalk.bold.green(getCommandWithExecutor('prisma migrate resolve --applied 20201231000000_example'))}
+${chalk.bold.green(getCommandWithExecutor('prisma migrate resolve --rolled-back 20201231000000_example'))}`,
       )
     }
     // if both are defined
@@ -135,15 +101,10 @@ ${chalk.bold.green(
     }
 
     if (args['--applied']) {
-      if (
-        typeof args['--applied'] !== 'string' ||
-        args['--applied'].length === 0
-      ) {
+      if (typeof args['--applied'] !== 'string' || args['--applied'].length === 0) {
         throw new Error(
           `--applied value must be a string like ${chalk.bold.green(
-            getCommandWithExecutor(
-              'prisma migrate resolve --applied 20201231000000_example',
-            ),
+            getCommandWithExecutor('prisma migrate resolve --applied 20201231000000_example'),
           )}`,
         )
       }
@@ -161,15 +122,10 @@ ${chalk.bold.green(
 
       return `Migration ${args['--applied']} marked as applied.`
     } else {
-      if (
-        typeof args['--rolled-back'] !== 'string' ||
-        args['--rolled-back'].length === 0
-      ) {
+      if (typeof args['--rolled-back'] !== 'string' || args['--rolled-back'].length === 0) {
         throw new Error(
           `--rolled-back value must be a string like ${chalk.bold.green(
-            getCommandWithExecutor(
-              'prisma migrate resolve --rolled-back 20201231000000_example',
-            ),
+            getCommandWithExecutor('prisma migrate resolve --rolled-back 20201231000000_example'),
           )}`,
         )
       }
@@ -191,9 +147,7 @@ ${chalk.bold.green(
 
   public help(error?: string): string | HelpError {
     if (error) {
-      return new HelpError(
-        `\n${chalk.bold.red(`!`)} ${error}\n${MigrateResolve.help}`,
-      )
+      return new HelpError(`\n${chalk.bold.red(`!`)} ${error}\n${MigrateResolve.help}`)
     }
     return MigrateResolve.help
   }

@@ -1,14 +1,9 @@
 export class PrismaClientKnownRequestError extends Error {
   code: string
-  meta?: object
+  meta?: Record<string, unknown>
   clientVersion: string
 
-  constructor(
-    message: string,
-    code: string,
-    clientVersion: string,
-    meta?: any,
-  ) {
+  constructor(message: string, code: string, clientVersion: string, meta?: any) {
     super(message)
 
     this.code = code

@@ -1,11 +1,18 @@
 import Debug from '@prisma/debug'
 import findUp from 'find-up'
-import path from 'path'
 import fs from 'fs'
+import path from 'path'
+
 import { getSchemaPathFromPackageJsonSync } from '../cli/getSchema'
 import { exists } from './tryLoadEnvs'
 
 const debug = Debug('prisma:loadEnv')
+
+export type EnvPaths = {
+  rootEnvPath: string | null
+  schemaEnvPath: string | undefined
+}
+
 /**
  *  1. Search in project root
  *  1. Schema
@@ -16,15 +23,10 @@ const debug = Debug('prisma:loadEnv')
  *
  * @returns `{ rootEnvPath, schemaEnvPath }`
  */
-export function getEnvPaths(
-  schemaPath?: string | null,
-  opts: { cwd: string } = { cwd: process.cwd() },
-) {
+export function getEnvPaths(schemaPath?: string | null, opts: { cwd: string } = { cwd: process.cwd() }): EnvPaths {
   const rootEnvPath = getProjectRootEnvPath({ cwd: opts.cwd }) ?? null
   const schemaEnvPathFromArgs = schemaPathToEnvPath(schemaPath)
-  const schemaEnvPathFromPkgJson = schemaPathToEnvPath(
-    readSchemaPathFromPkgJson(),
-  )
+  const schemaEnvPathFromPkgJson = schemaPathToEnvPath(readSchemaPathFromPkgJson())
   const schemaEnvPaths = [
     schemaEnvPathFromArgs, // 1 - Check --schema directory for .env
     schemaEnvPathFromPkgJson, // 2 - Check package.json schema directory for .env
@@ -43,12 +45,10 @@ function readSchemaPathFromPkgJson(): string | null {
   }
 }
 
-function getProjectRootEnvPath(
-  opts: findUp.Options | undefined,
-): string | null {
+function getProjectRootEnvPath(opts: findUp.Options | undefined): string | null {
   const pkgJsonPath = findUp.sync((dir) => {
     const pkgPath = path.join(dir, 'package.json')
-    if (findUp.exists(pkgPath)) {
+    if (findUp.sync.exists(pkgPath)) {
       try {
         const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
         if (pkg['name'] !== '.prisma/client') {

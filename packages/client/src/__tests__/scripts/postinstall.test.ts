@@ -1,12 +1,12 @@
 // Prevent postinstall script from running
-process.env.PRISMA_SKIP_POSTINSTALL_GENERATE = 'true'
-
 import {
   getPostInstallTrigger,
+  UNABLE_TO_FIND_POSTINSTALL_TRIGGER__ENVAR_MISSING,
   UNABLE_TO_FIND_POSTINSTALL_TRIGGER_JSON_PARSE_ERROR,
   UNABLE_TO_FIND_POSTINSTALL_TRIGGER_JSON_SCHEMA_ERROR,
-  UNABLE_TO_FIND_POSTINSTALL_TRIGGER__ENVAR_MISSING,
 } from '../../../scripts/postinstall'
+
+process.env.PRISMA_SKIP_POSTINSTALL_GENERATE = 'true'
 
 beforeEach(() => {
   process.env.npm_config_user_agent = 'npm/1.2.3'
@@ -49,9 +49,7 @@ describe('npm_config_user_agent', () => {
         process.env.npm_config_user_agent = value
       }
       delete process.env.npm_config_user_agent
-      expect(getPostInstallTrigger()).toEqual(
-        `MISSING_NPM_CONFIG_USER_AGENT foo bar`,
-      )
+      expect(getPostInstallTrigger()).toEqual(`MISSING_NPM_CONFIG_USER_AGENT foo bar`)
     },
   )
 
@@ -59,9 +57,7 @@ describe('npm_config_user_agent', () => {
     'if npm_config_user_agent not parsable then falls back to UNKNOWN_NPM_CONFIG_USER_AGENT',
     (userAgentString) => {
       process.env.npm_config_user_agent = userAgentString
-      expect(getPostInstallTrigger()).toEqual(
-        `UNKNOWN_NPM_CONFIG_USER_AGENT(${userAgentString}) foo bar`,
-      )
+      expect(getPostInstallTrigger()).toEqual(`UNKNOWN_NPM_CONFIG_USER_AGENT(${userAgentString}) foo bar`)
     },
   )
 })

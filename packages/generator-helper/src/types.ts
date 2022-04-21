@@ -1,4 +1,4 @@
-import { DMMF } from './dmmf'
+import type { DMMF } from './dmmf'
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace JsonRPC {
@@ -57,6 +57,8 @@ export type ConnectorType =
   | 'sqlite'
   | 'postgresql'
   | 'sqlserver'
+  | 'jdbc:sqlserver'
+  | 'cockroachdb'
 
 export interface DataSource {
   name: string
@@ -88,12 +90,7 @@ export type GeneratorOptions = {
   binaryPaths?: BinaryPaths
 }
 
-export type EngineType =
-  | 'queryEngine'
-  | 'libqueryEngine'
-  | 'migrationEngine'
-  | 'introspectionEngine'
-  | 'prismaFmt'
+export type EngineType = 'queryEngine' | 'libqueryEngine' | 'migrationEngine' | 'introspectionEngine' | 'prismaFmt'
 
 export type GeneratorManifest = {
   prettyName?: string

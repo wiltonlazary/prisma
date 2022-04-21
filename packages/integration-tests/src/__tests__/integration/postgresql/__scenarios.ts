@@ -1,5 +1,6 @@
-import { Input } from '../../__helpers__/integrationTest'
 import { Decimal } from 'decimal.js'
+
+import type { Input } from '../../__helpers__/integrationTest'
 
 export const scenarios = [
   {
@@ -437,9 +438,7 @@ export const scenarios = [
         insert into posts ("user_id", "title") values (2, 'C');
       `,
     do: (client) => {
-      return client.users
-        .findUnique({ where: { email: 'ada@prisma.io' } })
-        .posts()
+      return client.users.findUnique({ where: { email: 'ada@prisma.io' } }).posts()
     },
     expect: [
       {

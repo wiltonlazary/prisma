@@ -1,6 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client'
-
-// tslint:disable
+import { Prisma, PrismaClient } from '@prisma/client'
 
 // This file will not be executed, just compiled to check if the typings are valid
 async function main() {
@@ -31,6 +29,63 @@ async function main() {
       info: y,
     },
   })
+
+  {
+    const info: {
+      readonly a: string[]
+      readonly b: ReadonlyArray<string>
+      c: string[]
+      d: ReadonlyArray<string>
+      e: {
+        readonly a: {
+          b: {}
+        }
+      }
+    } = {
+      a: [],
+      b: [],
+      c: [],
+      d: [],
+      e: { a: { b: {} } },
+    }
+
+    const result = await prisma.user.create({
+      data: {
+        email: 'user@example.org',
+        info,
+      },
+    })
+
+    await prisma.user.update({
+      where: { id: '0' },
+      data: { info },
+    })
+
+    await prisma.user.update({
+      where: { id: '1' },
+      data: {
+        info: result.info === null ? Prisma.JsonNull : result.info,
+      },
+    })
+  }
+
+  {
+    const array: ReadonlyArray<string> = []
+
+    await prisma.user.update({
+      where: { id: '0' },
+      data: { info: array },
+    })
+  }
+
+  {
+    const array: string[] = []
+
+    await prisma.user.update({
+      where: { id: '0' },
+      data: { info: array },
+    })
+  }
 }
 
 main().catch((e) => {

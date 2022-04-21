@@ -1,13 +1,14 @@
 import stripAnsi from 'strip-ansi'
+
 import { blog } from '../fixtures/blog'
 import { getDMMF } from '../generation/getDMMF'
-import { DMMFClass } from '../runtime/dmmf'
+import { DMMFHelper } from '../runtime/dmmf'
 import { makeDocument } from '../runtime/query'
 
 let dmmf
 beforeAll(async () => {
   const dmmfDocument = await getDMMF({ datamodel: blog })
-  dmmf = new DMMFClass(dmmfDocument)
+  dmmf = new DMMFHelper(dmmfDocument)
 })
 
 describe('select validation', () => {
@@ -21,8 +22,7 @@ describe('select validation', () => {
         AND: [
           {
             age_gt: 10123123123,
-            this_is_completely_arbitrary:
-              'veryLongNameGoIntoaNewLineNow@gmail.com',
+            this_is_completely_arbitrary: 'veryLongNameGoIntoaNewLineNow@gmail.com',
           },
           {
             age_gt: 10123123123,

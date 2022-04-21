@@ -1,9 +1,9 @@
-import { PrismaClient, Prisma } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 
 async function main() {
   const prisma = new PrismaClient()
 
-  const bint: bigint = BigInt(0)
+  const bint = BigInt(0)
 
   const a: null | {
     id: string
@@ -49,6 +49,14 @@ async function main() {
     jsonb: Prisma.JsonValue
   } = await prisma.d.findFirst()
   const e = await prisma.e.findFirst()
+
+  await prisma.d.findFirst({
+    where: {
+      byteA: {
+        in: [Buffer.from('data')],
+      },
+    },
+  })
 }
 
 main()

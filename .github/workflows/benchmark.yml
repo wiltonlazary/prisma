@@ -9,37 +9,36 @@ on:
       # - `pull_request` see below
       # - https://github.com/prisma/prisma/blob/main/.buildkite/test/buildkite-entry.sh
       # - https://github.com/prisma/prisma/blob/main/.buildkite/publish/buildkite-entry.sh
-      - "*.md"
-      - ".devcontainer/**"
-      - ".vscode/**"
-      - "docs/**"
-      - "examples/**"
-      - "LICENSE"
+      - '*.md'
+      - '.devcontainer/**'
+      - '.vscode/**'
+      - 'docs/**'
+      - 'examples/**'
+      - 'LICENSE'
       - '.github/CODEOWNERS'
-      - "src/.buildkite/**"
-      - ".dockerignore"
-      - "scripts/ci/publish.ts"
-      - "graphs/**"
+      - 'src/.buildkite/**'
+      - '.dockerignore'
+      - 'scripts/ci/publish.ts'
+      - 'graphs/**'
 
 env:
-  PRISMA_TELEMETRY_INFORMATION: "prisma benchmark.yml"
+  PRISMA_TELEMETRY_INFORMATION: 'prisma benchmark.yml'
 
 jobs:
   benchmark:
     name: all
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - name: Cache .pnpm-store # From https://pnpm.io/continuous-integration
-        uses: actions/cache@v1
+      - uses: pnpm/action-setup@v2.2.1
         with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          version: latest
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
-          node-version: "12"
+          cache: 'pnpm'
+          node-version: '16'
 
       - run: bash .github/workflows/setup.sh
         env:
@@ -57,13 +56,29 @@ jobs:
         uses: rhysd/github-action-benchmark@v1
         with:
           name: Benchmark.js Benchmark
-          tool: "benchmarkjs"
+          tool: 'benchmarkjs'
           output-file-path: output.txt
           # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t5/GitHub-Actions/Github-action-not-triggering-gh-pages-upon-push/td-p/26869/highlight/false
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true
           # Show alert with commit comment on detecting possible performance regression
-          alert-threshold: "200%"
+          alert-threshold: '200%'
           comment-on-alert: true
           fail-on-alert: true
-          alert-comment-cc-users: "@williamluke4"
+          alert-comment-cc-users: '@Jolg42,@millsp'
+
+      - name: 'Set current job url in SLACK_FOOTER env var'
+        if: ${{ failure() }}
+        run: echo "SLACK_FOOTER=<$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID|Click here to go to the job logs>" >> $GITHUB_ENV
+
+      - name: Slack Notification on Failure
+        if: ${{ failure() }}
+        uses: rtCamp/action-slack-notify@v2.2.0
+        env:
+          SLACK_TITLE: 'Benchmark failed :x:'
+          SLACK_COLOR: '#FF0000'
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_CHANNEL: feed-prisma-failures
+          SLACK_USERNAME: Prismo
+          SLACK_ICON_EMOJI: ':boom:'
+          SLACK_MSG_AUTHOR: prisma-bot

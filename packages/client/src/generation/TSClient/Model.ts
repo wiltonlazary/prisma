@@ -1,7 +1,8 @@
-import { GeneratorConfig } from '@prisma/generator-helper'
+import type { GeneratorConfig } from '@prisma/generator-helper'
 import indent from 'indent-string'
 import { klona } from 'klona'
-import { DMMFClass } from '../../runtime/dmmf'
+
+import type { DMMFHelper } from '../../runtime/dmmf'
 import { DMMF } from '../../runtime/dmmf-types'
 import {
   getAggregateArgsName,
@@ -19,23 +20,19 @@ import {
   getMaxAggregateName,
   getMinAggregateName,
   getModelArgName,
+  getReturnType,
   getSelectName,
-  getSelectReturnType,
   getSumAggregateName,
   Projection,
 } from '../utils'
+import { buildComment } from '../utils/types/buildComment'
 import { InputField } from './../TSClient'
 import { ArgsType, MinimalArgsType } from './Args'
 import { TAB_SIZE } from './constants'
-import { Generatable, TS } from './Generatable'
-import {
-  ExportCollector,
-  getArgFieldJSDoc,
-  getArgs,
-  getGenericMethod,
-  getMethodJSDoc,
-  wrapComment,
-} from './helpers'
+import type { Generatable } from './Generatable'
+import { TS } from './Generatable'
+import type { ExportCollector } from './helpers'
+import { getArgFieldJSDoc, getArgs, getGenericMethod, getMethodJSDoc, wrapComment } from './helpers'
 import { InputType } from './Input'
 import { ModelOutputField, OutputType } from './Output'
 import { PayloadType } from './Payload'
@@ -47,56 +44,34 @@ export class Model implements Generatable {
   protected mapping?: DMMF.ModelMapping
   constructor(
     protected readonly model: DMMF.Model,
-    protected readonly dmmf: DMMFClass,
+    protected readonly dmmf: DMMFHelper,
     protected readonly generator?: GeneratorConfig,
     protected readonly collector?: ExportCollector,
   ) {
     this.type = dmmf.outputTypeMap[model.name]
     this.outputType = new OutputType(dmmf, this.type)
-    this.mapping = dmmf.mappings.modelOperations.find(
-      (m) => m.model === model.name,
-    )!
+    this.mapping = dmmf.mappings.modelOperations.find((m) => m.model === model.name)!
   }
   protected get argsTypes(): Generatable[] {
-    const { mapping, model } = this
-    if (!mapping) {
-      return []
-    }
+    const { mapping } = this
 
     const argsTypes: Generatable[] = []
     for (const action in DMMF.ModelAction) {
-      const fieldName = mapping[action]
+      const fieldName = mapping?.[action]
       if (!fieldName) {
         continue
       }
       const field = this.dmmf.rootFieldMap[fieldName]
       if (!field) {
-        throw new Error(
-          `Oops this must not happen. Could not find field ${fieldName} on either Query or Mutation`,
-        )
+        throw new Error(`Oops this must not happen. Could not find field ${fieldName} on either Query or Mutation`)
       }
-      if (
-        action === 'updateMany' ||
-        action === 'deleteMany' ||
-        action === 'createMany'
-      ) {
-        argsTypes.push(
-          new MinimalArgsType(
-            field.args,
-            model,
-            action as DMMF.ModelAction,
-            this.collector,
-          ),
-        )
+
+      if (action === 'updateMany' || action === 'deleteMany' || action === 'createMany') {
+        argsTypes.push(new MinimalArgsType(field.args, this.type, action as DMMF.ModelAction, this.collector))
+      } else if (action === 'findRaw' || action === 'aggregateRaw') {
+        argsTypes.push(new MinimalArgsType(field.args, this.type, action as DMMF.ModelAction, this.collector))
       } else if (action !== 'groupBy' && action !== 'aggregate') {
-        argsTypes.push(
-          new ArgsType(
-            field.args,
-            this.type,
-            action as DMMF.ModelAction,
-            this.collector,
-          ),
-        )
+        argsTypes.push(new ArgsType(field.args, this.type, action as DMMF.ModelAction, this.collector))
       }
     }
 
@@ -114,16 +89,14 @@ export class Model implements Generatable {
 
     const groupByRootField = this.dmmf.rootFieldMap[mapping!.groupBy!]
     if (!groupByRootField) {
-      throw new Error(
-        `Could not find groupBy root field for model ${model.name}. Mapping: ${mapping?.groupBy}`,
-      )
+      throw new Error(`Could not find groupBy root field for model ${model.name}. Mapping: ${mapping?.groupBy}`)
     }
 
     const groupByArgsName = getGroupByArgsName(model.name)
 
     return `
-    
-    
+
+
 export type ${groupByArgsName} = {
 ${indent(
   groupByRootField.args
@@ -136,9 +109,9 @@ ${indent(
         .filter((f) => f.outputType.location === 'outputObjectTypes')
         .map((f) => {
           if (f.outputType.location === 'outputObjectTypes') {
-            return `${f.name}?: ${getAggregateInputType(
-              (f.outputType.type as DMMF.OutputType).name,
-            )}${f.name === '_count' ? ' | true' : ''}`
+            return `${f.name}?: ${getAggregateInputType((f.outputType.type as DMMF.OutputType).name)}${
+              f.name === '_count' ? ' | true' : ''
+            }`
           }
 
           // to make TS happy, but can't happen, as we filter for outputObjectTypes
@@ -152,19 +125,17 @@ ${indent(
 
 ${new OutputType(this.dmmf, groupByType).toTS()}
 
-type ${getGroupByPayloadName(
-      model.name,
-    )}<T extends ${groupByArgsName}> = Promise<
+type ${getGroupByPayloadName(model.name)}<T extends ${groupByArgsName}> = PrismaPromise<
   Array<
-    PickArray<${groupByType.name}, T['by']> & 
+    PickArray<${groupByType.name}, T['by']> &
       {
-        [P in ((keyof T) & (keyof ${groupByType.name}))]: P extends '_count' 
-          ? T[P] extends boolean 
-            ? number 
-            : GetScalarType<T[P], ${groupByType.name}[P]> 
+        [P in ((keyof T) & (keyof ${groupByType.name}))]: P extends '_count'
+          ? T[P] extends boolean
+            ? number
+            : GetScalarType<T[P], ${groupByType.name}[P]>
           : GetScalarType<T[P], ${groupByType.name}[P]>
       }
-    > 
+    >
   >
 `
   }
@@ -172,19 +143,13 @@ type ${getGroupByPayloadName(
     const { model, mapping } = this
     let aggregateType = this.dmmf.outputTypeMap[getAggregateName(model.name)]
     if (!aggregateType) {
-      throw new Error(
-        `Could not get aggregate type "${getAggregateName(model.name)}" for "${
-          model.name
-        }"`,
-      )
+      throw new Error(`Could not get aggregate type "${getAggregateName(model.name)}" for "${model.name}"`)
     }
     aggregateType = klona(aggregateType)
 
     const aggregateRootField = this.dmmf.rootFieldMap[mapping!.aggregate!]
     if (!aggregateRootField) {
-      throw new Error(
-        `Could not find aggregate root field for model ${model.name}. Mapping: ${mapping?.aggregate}`,
-      )
+      throw new Error(`Could not find aggregate root field for model ${model.name}. Mapping: ${mapping?.aggregate}`)
     }
 
     const aggregateTypes = [aggregateType]
@@ -193,8 +158,7 @@ type ${getGroupByPayloadName(
     const sumType = this.dmmf.outputTypeMap[getSumAggregateName(model.name)]
     const minType = this.dmmf.outputTypeMap[getMinAggregateName(model.name)]
     const maxType = this.dmmf.outputTypeMap[getMaxAggregateName(model.name)]
-    const countType =
-      this.dmmf.outputTypeMap[getCountAggregateOutputName(model.name)]
+    const countType = this.dmmf.outputTypeMap[getCountAggregateOutputName(model.name)]
 
     if (avgType) {
       aggregateTypes.push(avgType)
@@ -222,9 +186,7 @@ type ${getGroupByPayloadName(
 
     this.collector?.addSymbol(aggregateArgsName)
 
-    return `${aggregateTypes
-      .map((type) => new SchemaOutputType(type, this.collector).toTS())
-      .join('\n')}
+    return `${aggregateTypes.map((type) => new SchemaOutputType(type, this.collector).toTS()).join('\n')}
 
 ${
   aggregateTypes.length > 1
@@ -267,18 +229,12 @@ ${indent(
     .concat(
       aggregateType.fields.map((f) => {
         let data = ''
-        const comment = getArgFieldJSDoc(
-          this.type,
-          DMMF.ModelAction.aggregate,
-          f.name,
-        )
+        const comment = getArgFieldJSDoc(this.type, DMMF.ModelAction.aggregate, f.name)
         data += comment ? wrapComment(comment) + '\n' : ''
         if (f.name === '_count' || f.name === 'count') {
           data += `${f.name}?: true | ${getCountAggregateInputName(model.name)}`
         } else {
-          data += `${f.name}?: ${getAggregateInputType(
-            (f.outputType.type as DMMF.OutputType).name,
-          )}`
+          data += `${f.name}?: ${getAggregateInputType((f.outputType.type as DMMF.OutputType).name)}`
         }
         return data
       }),
@@ -288,9 +244,7 @@ ${indent(
 )}
 }
 
-export type ${getAggregateGetName(model.name)}<T extends ${getAggregateArgsName(
-      model.name,
-    )}> = {
+export type ${getAggregateGetName(model.name)}<T extends ${getAggregateArgsName(model.name)}> = {
       [P in keyof T & keyof ${aggregateName}]: P extends '_count' | 'count'
     ? T[P] extends true
       ? number
@@ -300,15 +254,15 @@ export type ${getAggregateGetName(model.name)}<T extends ${getAggregateArgsName(
   }
   public toTSWithoutNamespace(): string {
     const { model } = this
-    return `/**
- * Model ${model.name}
- */
+    const docLines = model.documentation ?? ''
+    const modelLine = `Model ${model.name}\n`
+    const docs = `${modelLine}${docLines}`
 
-export type ${model.name} = {
+    return `${buildComment(docs)}export type ${model.name} = {
 ${indent(
   model.fields
-    .filter((f) => f.kind !== 'object' && f.kind !== 'unsupported')
-    .map((field) => new ModelOutputField(this.dmmf, field, true).toTS())
+    .filter((f) => (f.kind !== 'object' && f.kind !== 'unsupported') || this.dmmf.typeMap[f.type])
+    .map((field) => new ModelOutputField(this.dmmf, field, !this.dmmf.typeMap[field.type]).toTS())
     .join('\n'),
   TAB_SIZE,
 )}
@@ -327,14 +281,19 @@ ${indent(
       ? `\nexport type ${getIncludeName(model.name)} = {
 ${indent(
   outputType.fields
-    .filter((f) => f.outputType.location === 'outputObjectTypes')
-    .map(
-      (f) =>
+    .filter((f) => {
+      const fieldTypeName = (f.outputType.type as DMMF.OutputType).name
+      return f.outputType.location === 'outputObjectTypes' && !this.dmmf.typeMap[fieldTypeName]
+    })
+    .map((f) => {
+      const fieldTypeName = (f.outputType.type as DMMF.OutputType).name
+      return (
         `${f.name}?: boolean` +
         (f.outputType.location === 'outputObjectTypes'
-          ? ` | ${getFieldArgName(f)}`
-          : ''),
-    )
+          ? ` | ${getFieldArgName(f, !this.dmmf.typeMap[fieldTypeName])}`
+          : '')
+      )
+    })
     .join('\n'),
   TAB_SIZE,
 )}
@@ -346,26 +305,28 @@ ${indent(
  * Model ${model.name}
  */
 
-${this.getAggregationTypes()}
+${!this.dmmf.typeMap[model.name] ? this.getAggregationTypes() : ''}
 
-${this.getGroupByTypes()}
+${!this.dmmf.typeMap[model.name] ? this.getGroupByTypes() : ''}
 
 export type ${getSelectName(model.name)} = {
 ${indent(
   outputType.fields
-    .map(
-      (f) =>
+    .map((f) => {
+      const fieldTypeName = (f.outputType.type as DMMF.OutputType).name
+      return (
         `${f.name}?: boolean` +
         (f.outputType.location === 'outputObjectTypes'
-          ? ` | ${getFieldArgName(f)}`
-          : ''),
-    )
+          ? ` | ${getFieldArgName(f, !this.dmmf.typeMap[fieldTypeName])}`
+          : '')
+      )
+    })
     .join('\n'),
   TAB_SIZE,
 )}
 }
 ${includeType}
-${new PayloadType(this.outputType!).toTS()}
+${new PayloadType(this.outputType!, !this.dmmf.typeMap[model.name]).toTS()}
 
 ${new ModelDelegate(this.outputType!, this.dmmf, this.generator).toTS()}
 
@@ -377,52 +338,53 @@ ${this.argsTypes.map(TS).join('\n')}
 export class ModelDelegate implements Generatable {
   constructor(
     protected readonly outputType: OutputType,
-    protected readonly dmmf: DMMFClass,
+    protected readonly dmmf: DMMFHelper,
     protected readonly generator?: GeneratorConfig,
   ) {}
   public toTS(): string {
     const { fields, name } = this.outputType
-    const mapping = this.dmmf.mappingsMap[name]
-    if (!mapping) {
-      return ''
-    }
-    const model = this.dmmf.modelMap[name]
 
-    const actions = Object.entries(mapping).filter(
-      ([key, value]) =>
-        key !== 'model' &&
-        key !== 'plural' &&
-        key !== 'aggregate' &&
-        key !== 'groupBy' &&
-        value,
-    )
+    const mapping = this.dmmf.mappingsMap[name] ?? { model: name, plural: `${name}s` }
+    const modelOrType = this.dmmf.typeAndModelMap[name]
+
+    const mappingKeys = Object.keys(mapping)
+    const availableActions = mappingKeys.filter(
+      (key) => key !== 'model' && key !== 'plural' && mapping[key],
+    ) as DMMF.ModelAction[]
+    const filteredActions = availableActions.filter(
+      (key) => key !== 'aggregate' && key !== 'groupBy',
+    ) as DMMF.ModelAction[]
+
     const groupByArgsName = getGroupByArgsName(name)
     const countArgsName = getModelArgName(name, DMMF.ModelAction.count)
     return `\
-type ${countArgsName} = Merge<
-  Omit<${getModelArgName(
-    name,
-    DMMF.ModelAction.findMany,
-  )}, 'select' | 'include'> & {
+${
+  availableActions.includes(DMMF.ModelAction.aggregate)
+    ? `type ${countArgsName} = Merge<
+  Omit<${getModelArgName(name, DMMF.ModelAction.findMany)}, 'select' | 'include'> & {
     select?: ${getCountAggregateInputName(name)} | true
   }
 >
-
+`
+    : ''
+}
 export interface ${name}Delegate<GlobalRejectSettings> {
 ${indent(
-  actions
+  filteredActions
     .map(
-      ([actionName]: [any, any]): string =>
-        `${getMethodJSDoc(actionName, mapping, model)}
+      (actionName): string =>
+        `${getMethodJSDoc(actionName, mapping, modelOrType)}
 ${actionName}${getGenericMethod(name, actionName)}(
   ${getArgs(name, actionName)}
-): ${getSelectReturnType({ name, actionName, projection: Projection.select })}`,
+): ${getReturnType({ name, actionName, projection: Projection.select })}`,
     )
     .join('\n\n'),
   TAB_SIZE,
 )}
 
-${indent(getMethodJSDoc(DMMF.ModelAction.count, mapping, model), TAB_SIZE)}
+${
+  availableActions.includes(DMMF.ModelAction.aggregate)
+    ? `${indent(getMethodJSDoc(DMMF.ModelAction.count, mapping, modelOrType), TAB_SIZE)}
   count<T extends ${countArgsName}>(
     args?: Subset<T, ${countArgsName}>,
   ): PrismaPromise<
@@ -432,15 +394,21 @@ ${indent(getMethodJSDoc(DMMF.ModelAction.count, mapping, model), TAB_SIZE)}
         : GetScalarType<T['select'], ${getCountAggregateOutputName(name)}>
       : number
   >
-
-${indent(getMethodJSDoc(DMMF.ModelAction.aggregate, mapping, model), TAB_SIZE)}
-  aggregate<T extends ${getAggregateArgsName(
-    name,
-  )}>(args: Subset<T, ${getAggregateArgsName(
-      name,
-    )}>): PrismaPromise<${getAggregateGetName(name)}<T>>
-
-${indent(getMethodJSDoc(DMMF.ModelAction.groupBy, mapping, model), TAB_SIZE)}
+`
+    : ''
+}
+${
+  availableActions.includes(DMMF.ModelAction.aggregate)
+    ? `${indent(getMethodJSDoc(DMMF.ModelAction.aggregate, mapping, modelOrType), TAB_SIZE)}
+  aggregate<T extends ${getAggregateArgsName(name)}>(args: Subset<T, ${getAggregateArgsName(
+        name,
+      )}>): PrismaPromise<${getAggregateGetName(name)}<T>>
+`
+    : ''
+}
+${
+  availableActions.includes(DMMF.ModelAction.groupBy)
+    ? `${indent(getMethodJSDoc(DMMF.ModelAction.groupBy, mapping, modelOrType), TAB_SIZE)}
   groupBy<
     T extends ${groupByArgsName},
     HasSelectOrTake extends Or<
@@ -499,14 +467,16 @@ ${indent(getMethodJSDoc(DMMF.ModelAction.groupBy, mapping, model), TAB_SIZE)}
           : \`Error: Field "$\{P}" in "orderBy" needs to be provided in "by"\`
       }[OrderFields]
   >(args: SubsetIntersection<T, ${groupByArgsName}, OrderByArg> & InputErrors): {} extends InputErrors ? ${getGroupByPayloadName(
-      name,
-    )}<T> : Promise<InputErrors>
+        name,
+      )}<T> : PrismaPromise<InputErrors>`
+    : ''
+}
 }
 
 /**
  * The delegate class that acts as a "Promise-like" for ${name}.
  * Why is this prefixed with \`Prisma__\`?
- * Because we want to prevent naming conflicts as mentioned in 
+ * Because we want to prevent naming conflicts as mentioned in
  * https://github.com/prisma/prisma-client-js/issues/707
  */
 export class Prisma__${name}Client<T> implements PrismaPromise<T> {
@@ -527,20 +497,16 @@ export class Prisma__${name}Client<T> implements PrismaPromise<T> {
   readonly [Symbol.toStringTag]: 'PrismaClientPromise';
 ${indent(
   fields
-    .filter(
-      (f) =>
-        f.outputType.location === 'outputObjectTypes' && f.name !== '_count',
-    )
+    .filter((f) => f.outputType.location === 'outputObjectTypes' && f.name !== '_count')
     .map((f) => {
       const fieldTypeName = (f.outputType.type as DMMF.OutputType).name
       return `
-${f.name}<T extends ${getFieldArgName(
+${f.name}<T extends ${getFieldArgName(f, !this.dmmf.typeMap[fieldTypeName])} = {}>(args?: Subset<T, ${getFieldArgName(
         f,
-      )} = {}>(args?: Subset<T, ${getFieldArgName(f)}>): ${getSelectReturnType({
+        !this.dmmf.typeMap[fieldTypeName],
+      )}>): ${getReturnType({
         name: fieldTypeName,
-        actionName: f.outputType.isList
-          ? DMMF.ModelAction.findMany
-          : DMMF.ModelAction.findUnique,
+        actionName: f.outputType.isList ? DMMF.ModelAction.findMany : DMMF.ModelAction.findUnique,
         hideCondition: false,
         isField: true,
         renderPromise: true,

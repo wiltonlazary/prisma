@@ -8,6 +8,7 @@ export type ConnectorType =
   | 'postgresql'
   | 'sqlserver'
   | 'jdbc:sqlserver'
+  | 'cockroachdb'
 
 export interface GeneratorConfig {
   name: string
@@ -30,12 +31,8 @@ export interface InternalDatasource {
   config: any
 }
 
-export function printDatasources(
-  internalDatasources: InternalDatasource[],
-): string {
-  return internalDatasources
-    .map((d) => String(new InternalDataSourceClass(d)))
-    .join('\n\n')
+export function printDatasources(internalDatasources: InternalDatasource[]): string {
+  return internalDatasources.map((d) => String(new InternalDataSourceClass(d))).join('\n\n')
 }
 
 const tab = 2
@@ -59,17 +56,12 @@ ${indent(printDatamodelObject(obj), tab)}
 }
 
 export function printDatamodelObject(obj: any): string {
-  const maxLength = Object.keys(obj).reduce(
-    (max, curr) => Math.max(max, curr.length),
-    0,
-  )
+  const maxLength = Object.keys(obj).reduce((max, curr) => Math.max(max, curr.length), 0)
   return Object.entries(obj)
     .map(
       ([key, value]: [string, any]) =>
         `${key.padEnd(maxLength)} = ${
-          typeof value === 'object' && value && value.value
-            ? JSON.stringify(value.value)
-            : JSON.stringify(value)
+          typeof value === 'object' && value && value.value ? JSON.stringify(value.value) : JSON.stringify(value)
         }`,
     )
     .join('\n')

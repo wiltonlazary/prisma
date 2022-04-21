@@ -150,11 +150,7 @@ export function setup(env) {
   createDebug.selectColor = selectColor
 
   function extend(this, namespace, delimiter) {
-    const newDebug = createDebug(
-      this.namespace +
-        (typeof delimiter === 'undefined' ? ':' : delimiter) +
-        namespace,
-    )
+    const newDebug = createDebug(this.namespace + (typeof delimiter === 'undefined' ? ':' : delimiter) + namespace)
     newDebug.log = this.log
     return newDebug
   }
@@ -174,9 +170,7 @@ export function setup(env) {
     createDebug.skips = []
 
     let i
-    const split = (typeof namespaces === 'string' ? namespaces : '').split(
-      /[\s,]+/,
-    )
+    const split = (typeof namespaces === 'string' ? namespaces : '').split(/[\s,]+/)
     const len = split.length
 
     for (i = 0; i < len; i++) {
@@ -188,7 +182,7 @@ export function setup(env) {
       namespaces = split[i].replace(/\*/g, '.*?')
 
       if (namespaces[0] === '-') {
-        createDebug.skips.push(new RegExp('^' + namespaces.substr(1) + '$'))
+        createDebug.skips.push(new RegExp('^' + namespaces.slice(1) + '$'))
       } else {
         createDebug.names.push(new RegExp('^' + namespaces + '$'))
       }

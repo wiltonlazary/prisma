@@ -1,7 +1,9 @@
 import chalk from 'chalk'
+
 import { chinook } from '../fixtures/chinook'
-import { DMMFClass, makeDocument } from '../runtime'
 import { getDMMF } from '../generation/getDMMF'
+import { DMMFClass, makeDocument } from '../runtime'
+
 chalk.level = 0
 
 describe('relation where transformation', () => {
@@ -45,9 +47,7 @@ describe('relation where transformation', () => {
       rootField: 'findManyArtist',
     })
 
-    expect(() =>
-      document.validate(select, false, 'users'),
-    ).toThrowErrorMatchingSnapshot()
+    expect(() => document.validate(select, false, 'users')).toThrowErrorMatchingSnapshot()
   })
 
   test('throw correctly for incorrect deep scalar', () => {
@@ -84,9 +84,7 @@ describe('relation where transformation', () => {
       rootTypeName: 'query',
       rootField: 'findManyArtist',
     })
-    expect(() =>
-      document.validate(select, false, 'users'),
-    ).toThrowErrorMatchingSnapshot()
+    expect(() => document.validate(select, false, 'users')).toThrowErrorMatchingSnapshot()
   })
   test('throw correctly for deep at least one error', () => {
     const select = {
@@ -120,8 +118,6 @@ describe('relation where transformation', () => {
       rootTypeName: 'query',
       rootField: 'findManyArtist',
     })
-    expect(() =>
-      document.validate(select, false, 'artists'),
-    ).toThrowErrorMatchingSnapshot()
+    expect(() => document.validate(select, false, 'artists')).toThrowErrorMatchingSnapshot()
   })
 })

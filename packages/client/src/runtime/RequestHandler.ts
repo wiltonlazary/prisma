@@ -1,5 +1,6 @@
 import Debug from '@prisma/debug'
 import stripAnsi from 'strip-ansi'
+
 import {
   PrismaClientInitializationError,
   PrismaClientKnownRequestError,
@@ -7,11 +8,14 @@ import {
   PrismaClientUnknownRequestError,
 } from '.'
 import { DataLoader } from './DataLoader'
-import { Client, Unpacker } from './getPrismaClient'
-import { EngineMiddleware } from './MiddlewareHandler'
-import { Args, Document, unpack } from './query'
+import type { Client, Unpacker } from './getPrismaClient'
+import type { EngineMiddleware } from './MiddlewareHandler'
+import type { Document } from './query'
+import { Args, unpack } from './query'
 import { printStack } from './utils/printStack'
-import { RejectOnNotFound, throwIfNotFound } from './utils/rejectOnNotFound'
+import type { RejectOnNotFound } from './utils/rejectOnNotFound'
+import { throwIfNotFound } from './utils/rejectOnNotFound'
+
 const debug = Debug('prisma:client:request_handler')
 
 export type RequestParams = {
@@ -28,15 +32,28 @@ export type RequestParams = {
   engineHook?: EngineMiddleware
   args: any
   headers?: Record<string, string>
-  transactionId?: string
+  transactionId?: string | number
   unpacker?: Unpacker
 }
 
 export type Request = {
   document: Document
   runInTransaction?: boolean
-  transactionId?: string
+  transactionId?: string | number
   headers?: Record<string, string>
+}
+
+function getRequestInfo(requests: Request[]) {
+  const txId = requests[0].transactionId
+  const inTx = requests[0].runInTransaction
+  const headers = requests[0].headers
+
+  // if the tx has a number for an id, then it's a regular batch tx
+  const _inTx = typeof txId === 'number' && inTx ? true : undefined
+  // if the tx has a string for id, it's an interactive transaction
+  const _txId = typeof txId === 'string' && inTx ? txId : undefined
+
+  return { inTx: _inTx, headers: { transactionId: _txId, ...headers } }
 }
 
 export class RequestHandler {
@@ -49,19 +66,16 @@ export class RequestHandler {
     this.hooks = hooks
     this.dataloader = new DataLoader({
       batchLoader: (requests) => {
+        const info = getRequestInfo(requests)
         const queries = requests.map((r) => String(r.document))
 
-        return this.client._engine.requestBatch(queries, {
-          transactionId: requests[0].transactionId,
-        })
+        return this.client._engine.requestBatch(queries, info.headers, info.inTx)
       },
       singleLoader: (request) => {
+        const info = getRequestInfo([request])
         const query = String(request.document)
 
-        return this.client._engine.request(query, {
-          transactionId: request.transactionId,
-          ...request.headers,
-        })
+        return this.client._engine.request(query, info.headers)
       },
       batchBy: (request) => {
         if (request.transactionId) {
@@ -132,19 +146,13 @@ export class RequestHandler {
       /**
        * Unpack
        */
-      const unpackResult = this.unpack(
-        document,
-        data,
-        dataPath,
-        rootField,
-        unpacker,
-      )
+      const unpackResult = this.unpack(document, data, dataPath, rootField, unpacker)
       throwIfNotFound(unpackResult, clientMethod, typeName, rejectOnNotFound)
       if (process.env.PRISMA_CLIENT_GET_TIME) {
         return { data: unpackResult, elapsed }
       }
       return unpackResult
-    } catch (e) {
+    } catch (e: any) {
       debug(e)
       let message = e.message
       if (callsite) {
@@ -160,32 +168,15 @@ export class RequestHandler {
       message = this.sanitizeMessage(message)
       // TODO: Do request with callsite instead, so we don't need to rethrow
       if (e.code) {
-        throw new PrismaClientKnownRequestError(
-          message,
-          e.code,
-          this.client._clientVersion,
-          e.meta,
-        )
+        throw new PrismaClientKnownRequestError(message, e.code, this.client._clientVersion, e.meta)
       } else if (e.isPanic) {
-        throw new PrismaClientRustPanicError(
-          message,
-          this.client._clientVersion,
-        )
+        throw new PrismaClientRustPanicError(message, this.client._clientVersion)
       } else if (e instanceof PrismaClientUnknownRequestError) {
-        throw new PrismaClientUnknownRequestError(
-          message,
-          this.client._clientVersion,
-        )
+        throw new PrismaClientUnknownRequestError(message, this.client._clientVersion)
       } else if (e instanceof PrismaClientInitializationError) {
-        throw new PrismaClientInitializationError(
-          message,
-          this.client._clientVersion,
-        )
+        throw new PrismaClientInitializationError(message, this.client._clientVersion)
       } else if (e instanceof PrismaClientRustPanicError) {
-        throw new PrismaClientRustPanicError(
-          message,
-          this.client._clientVersion,
-        )
+        throw new PrismaClientRustPanicError(message, this.client._clientVersion)
       }
 
       e.clientVersion = this.client._clientVersion

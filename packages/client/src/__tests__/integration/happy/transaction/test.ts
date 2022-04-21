@@ -19,10 +19,7 @@ function clean(array: any[]) {
 }
 
 beforeAll(() => {
-  fs.copyFileSync(
-    path.join(__dirname, 'dev.db'),
-    path.join(__dirname, 'dev2.db'),
-  )
+  fs.copyFileSync(path.join(__dirname, 'dev.db'), path.join(__dirname, 'dev2.db'))
 })
 
 test('transaction', async () => {
@@ -46,6 +43,7 @@ test('transaction', async () => {
       },
     }),
     db.user.findMany(),
+    db.user.count(),
     db.user.delete({ where: { email: 'test@hey.com' } }),
   ])
   expect(clean(result)).toMatchInlineSnapshot(`
@@ -74,6 +72,7 @@ test('transaction', async () => {
           name: null,
         },
       ],
+      2,
       Object {
         email: test@hey.com,
         id: REMOVED,

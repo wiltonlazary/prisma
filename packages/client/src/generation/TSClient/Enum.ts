@@ -1,8 +1,9 @@
 import indent from 'indent-string'
-import { Generatable } from './Generatable'
-import { DMMF } from '../../runtime/dmmf-types'
-import { ExportCollector } from './helpers'
+
+import type { DMMF } from '../../runtime/dmmf-types'
 import { TAB_SIZE } from './constants'
+import type { Generatable } from './Generatable'
+import type { ExportCollector } from './helpers'
 
 export class Enum implements Generatable {
   constructor(
@@ -16,9 +17,7 @@ export class Enum implements Generatable {
   }
   public toJS(): string {
     const { type } = this
-    return `exports.${this.useNamespace ? 'Prisma.' : ''}${
-      type.name
-    } = makeEnum({
+    return `exports.${this.useNamespace ? 'Prisma.' : ''}${type.name} = makeEnum({
 ${indent(type.values.map((v) => `${v}: '${v}'`).join(',\n'), TAB_SIZE)}
 });`
   }

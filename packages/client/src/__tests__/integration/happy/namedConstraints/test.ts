@@ -1,4 +1,5 @@
 import path from 'path'
+
 import { generateTestClient } from '../../../../utils/getTestClient'
 import { migrateDb } from '../../__helpers__/migrateDb'
 
@@ -32,15 +33,14 @@ describe('namedConstraints(sqlite) - with preview flag', () => {
         key2: 2,
       },
     })
-    const result: { key1: string; key2: number } | null =
-      await prisma.atAtId.findUnique({
-        where: {
-          key1_key2: {
-            key1: 'data',
-            key2: 2,
-          },
+    const result: { key1: string; key2: number } | null = await prisma.atAtId.findUnique({
+      where: {
+        key1_key2: {
+          key1: 'data',
+          key2: 2,
         },
-      })
+      },
+    })
     expect(result).toEqual({
       key1: 'data',
       key2: 2,
@@ -54,15 +54,14 @@ describe('namedConstraints(sqlite) - with preview flag', () => {
         key2: 2,
       },
     })
-    const result: { key1: string; key2: number } | null =
-      await prisma.atAtIdNamed.findUnique({
-        where: {
-          namedConstraintId: {
-            key1: 'data',
-            key2: 2,
-          },
+    const result: { key1: string; key2: number } | null = await prisma.atAtIdNamed.findUnique({
+      where: {
+        namedConstraintId: {
+          key1: 'data',
+          key2: 2,
         },
-      })
+      },
+    })
     expect(result).toEqual({
       key1: 'data',
       key2: 2,
@@ -76,15 +75,14 @@ describe('namedConstraints(sqlite) - with preview flag', () => {
         key2: 2,
       },
     })
-    const result: { key1: string; key2: number } | null =
-      await prisma.atAtUnique.findUnique({
-        where: {
-          key1_key2: {
-            key1: 'data',
-            key2: 2,
-          },
+    const result: { key1: string; key2: number } | null = await prisma.atAtUnique.findUnique({
+      where: {
+        key1_key2: {
+          key1: 'data',
+          key2: 2,
         },
-      })
+      },
+    })
     expect(result).toEqual({
       key1: 'data',
       key2: 2,
@@ -98,15 +96,14 @@ describe('namedConstraints(sqlite) - with preview flag', () => {
         key2: 2,
       },
     })
-    const result: { key1: string; key2: number } | null =
-      await prisma.atAtUniqueNamed.findUnique({
-        where: {
-          namedConstraintUnique: {
-            key1: 'data',
-            key2: 2,
-          },
+    const result: { key1: string; key2: number } | null = await prisma.atAtUniqueNamed.findUnique({
+      where: {
+        namedConstraintUnique: {
+          key1: 'data',
+          key2: 2,
         },
-      })
+      },
+    })
     expect(result).toEqual({
       key1: 'data',
       key2: 2,

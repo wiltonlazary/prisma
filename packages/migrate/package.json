@@ -2,52 +2,42 @@
   "name": "@prisma/migrate",
   "version": "0.0.0",
   "main": "dist/index.js",
+  "module": "esm/dist/index.mjs",
   "types": "dist/index.d.ts",
-  "repository": "git@github.com:prisma/prisma.git",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/prisma/prisma.git",
+    "directory": "packages/migrate"
+  },
   "author": "Tim Suchanek <suchanek@prisma.io>",
   "maintainers": [
-    "Tim Suchanek <suchanek@prisma.io>",
     "Joël Galeran <galeran@prisma.io>"
   ],
-  "homepage": "https://www.prisma.io",
+  "homepage": "https://www.prisma.io/migrate",
   "bugs": "https://github.com/prisma/prisma/issues",
   "license": "Apache-2.0",
   "prisma": {
     "version": "latest"
   },
   "devDependencies": {
-    "@prisma/engines-version": "3.2.0-8.b3267b043a190a585bd06e9e91855e135eb7b1c6",
+    "@prisma/engines-version": "3.13.0-10.f738c2de40b0514b47c5cdbf75f8bb06929df254",
     "@prisma/generator-helper": "workspace:*",
     "@prisma/sdk": "workspace:*",
-    "@types/jest": "27.0.2",
-    "@types/node": "12.20.26",
-    "@types/pg": "8.6.1",
+    "@swc/core": "1.2.141",
+    "@swc/jest": "0.2.17",
+    "@types/jest": "27.4.1",
+    "@types/node": "12.20.48",
+    "@types/pg": "8.6.5",
     "@types/prompts": "2.0.14",
-    "@types/sqlite3": "3.1.7",
-    "@typescript-eslint/eslint-plugin": "4.29.3",
-    "@typescript-eslint/parser": "4.29.3",
-    "chalk": "4.1.2",
-    "del": "6.0.0",
-    "esbuild": "0.12.16",
-    "eslint": "7.32.0",
-    "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-eslint-comments": "3.2.0",
-    "eslint-plugin-jest": "24.4.0",
-    "eslint-plugin-prettier": "4.0.0",
-    "fs-jetpack": "4.1.1",
-    "glob": "7.1.7",
-    "jest": "27.2.1",
-    "lint-staged": "11.1.2",
+    "@types/sqlite3": "3.1.8",
+    "esbuild": "0.13.14",
+    "fs-jetpack": "4.3.0",
+    "jest": "27.5.1",
+    "jest-junit": "13.0.0",
     "make-dir": "3.1.0",
-    "mariadb": "2.5.4",
     "mock-stdin": "1.0.0",
-    "pg": "8.7.1",
-    "prettier": "2.3.2",
-    "sqlite-async": "1.1.1",
-    "sqlite3": "5.0.2",
     "tempy": "1.0.1",
-    "ts-jest": "27.0.5",
-    "typescript": "4.3.5"
+    "typescript": "4.5.4"
   },
   "peerDependencies": {
     "@prisma/generator-helper": "*",
@@ -55,29 +45,26 @@
   },
   "dependencies": {
     "@prisma/debug": "workspace:*",
-    "@prisma/get-platform": "3.2.0-8.b3267b043a190a585bd06e9e91855e135eb7b1c6",
+    "@prisma/get-platform": "3.13.0-10.f738c2de40b0514b47c5cdbf75f8bb06929df254",
     "@sindresorhus/slugify": "1.1.2",
+    "chalk": "4.1.2",
     "execa": "5.1.1",
-    "global-dirs": "3.0.0",
+    "get-stdin": "8.0.0",
     "has-yarn": "2.1.0",
     "indent-string": "4.0.0",
     "log-update": "4.0.0",
-    "new-github-issue-url": "0.2.1",
-    "open": "7.4.2",
+    "mariadb": "3.0.0",
+    "mssql": "8.1.0",
+    "pg": "8.7.3",
     "pkg-up": "3.1.0",
-    "prompts": "2.4.1",
-    "resolve-pkg": "2.0.0",
-    "strip-ansi": "6.0.0",
+    "prompts": "2.4.2",
+    "strip-ansi": "6.0.1",
     "strip-indent": "3.0.0"
   },
   "scripts": {
-    "dev": "DEV=true node helpers/build.js",
-    "build": "node helpers/build.js",
+    "dev": "DEV=true node -r esbuild-register helpers/build.ts",
+    "build": "node -r esbuild-register helpers/build.ts",
     "run": "node dist/bin.js",
-    "precommit": "lint-staged",
-    "format": "prettier --write .",
-    "lint": "eslint --cache --fix --ext .ts .",
-    "lint-ci": "eslint --ext .ts .",
     "test": "jest --verbose",
     "prepublishOnly": "pnpm run build"
   },
@@ -85,10 +72,5 @@
     "README.md",
     "dist"
   ],
-  "lint-staged": {
-    "*.ts": [
-      "eslint",
-      "prettier --write"
-    ]
-  }
+  "sideEffects": false
 }

@@ -1,7 +1,5 @@
-import {
-  ClientEngineType,
-  getClientEngineType,
-} from '../../../../runtime/utils/getClientEngineType'
+import { ClientEngineType, getClientEngineType } from '@prisma/sdk'
+
 import { getTestClient } from '../../../../utils/getTestClient'
 
 // Does Prisma Client restart the QE when it is killed for some reason?

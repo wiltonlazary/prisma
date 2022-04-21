@@ -1,9 +1,10 @@
 import Debug from '@prisma/debug'
-import { NodeAPILibraryTypes } from '@prisma/engine-core'
+import type { NodeAPILibraryTypes } from '@prisma/engine-core'
 import { getCliQueryEngineBinaryType } from '@prisma/engines'
 import { BinaryType } from '@prisma/fetch-engine'
 import { isNodeAPISupported } from '@prisma/get-platform'
 import execa from 'execa'
+
 import { resolveBinary } from '../resolveBinary'
 import { load } from '../utils/load'
 
@@ -11,10 +12,7 @@ const debug = Debug('prisma:getVersion')
 
 const MAX_BUFFER = 1_000_000_000
 
-export async function getVersion(
-  enginePath?: string,
-  binaryName?: BinaryType,
-): Promise<string> {
+export async function getVersion(enginePath?: string, binaryName?: BinaryType): Promise<string> {
   if (!binaryName) {
     binaryName = getCliQueryEngineBinaryType()
   }

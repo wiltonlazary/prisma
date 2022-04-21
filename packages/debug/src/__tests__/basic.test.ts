@@ -1,5 +1,6 @@
-import Debug, { getLogs } from '..'
 import stripAnsi from 'strip-ansi'
+
+import Debug, { getLogs } from '..'
 import { removeISODate, sanitizeTestLogs } from '../util'
 
 describe('debug', () => {
@@ -12,9 +13,7 @@ describe('debug', () => {
     debug('Does it even log?')
     debug('I dont know')
 
-    expect(removeISODate(JSON.stringify(logs, null, 2))).toMatchInlineSnapshot(
-      `"[]"`,
-    )
+    expect(removeISODate(JSON.stringify(logs, null, 2))).toMatchInlineSnapshot(`"[]"`)
 
     expect(sanitizeTestLogs(getLogs())).toMatchInlineSnapshot(`
       "my-namespace Does it even log?

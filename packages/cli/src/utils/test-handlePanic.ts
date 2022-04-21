@@ -1,7 +1,6 @@
-import { handlePanic } from '@prisma/migrate'
-import path from 'path'
+import { handlePanic, IntrospectionEngine } from '@prisma/sdk'
 import fs from 'fs'
-import { IntrospectionEngine } from '@prisma/sdk'
+import path from 'path'
 
 async function main() {
   const packageJsonVersion = '0.0.0'
@@ -9,14 +8,7 @@ async function main() {
   const command = 'something-test'
 
   try {
-    const dirPath = path.join(
-      __dirname,
-      '..',
-      '__tests__',
-      'fixtures',
-      'introspection',
-      'postgresql',
-    )
+    const dirPath = path.join(__dirname, '..', '__tests__', 'fixtures', 'introspection', 'postgresql')
 
     process.chdir(dirPath)
 

@@ -1,12 +1,13 @@
-import { GeneratorConfig } from '@prisma/generator-helper'
+import type { GeneratorConfig } from '@prisma/generator-helper'
 import indent from 'indent-string'
-import { DMMFClass } from '../../runtime/dmmf'
+
+import type { DMMFHelper } from '../../runtime/dmmf'
 import { capitalize, lowerCase } from '../../runtime/utils/common'
-import { InternalDatasource } from '../../runtime/utils/printDatasources'
-import { DatasourceOverwrite } from './../extractSqliteSources'
+import type { InternalDatasource } from '../../runtime/utils/printDatasources'
+import type { DatasourceOverwrite } from './../extractSqliteSources'
 import { TAB_SIZE } from './constants'
 import { Datasources } from './Datasources'
-import { Generatable } from './Generatable'
+import type { Generatable } from './Generatable'
 
 function batchingTransactionDefinition(this: PrismaClientClass) {
   return `
@@ -100,9 +101,32 @@ function executeRawDefinition(this: PrismaClientClass) {
   $executeRawUnsafe<T = unknown>(query: string, ...values: any[]): PrismaPromise<number>;`
 }
 
+function runCommandRawDefinition(this: PrismaClientClass) {
+  // we do not generate `$runCommandRaw` definitions if not supported
+  if (!this.dmmf.mappings.otherOperations.write.includes('runCommandRaw')) {
+    return '' // https://github.com/prisma/prisma/issues/8189
+  }
+
+  return `
+  /**
+   * Executes a raw MongoDB command and returns the result of it.
+   * @example
+   * \`\`\`
+   * const user = await prisma.$runCommandRaw({
+   *   aggregate: 'User',
+   *   pipeline: [{ $match: { name: 'Bob' } }, { $project: { email: true, _id: false } }],
+   *   explain: false,
+   * })
+   * \`\`\`
+   * 
+   * Read more in our [docs](https://www.prisma.io/docs/reference/tools-and-interfaces/prisma-client/raw-database-access).
+   */
+  $runCommandRaw(command: Prisma.InputJsonObject): PrismaPromise<Prisma.JsonObject>;`
+}
+
 export class PrismaClientClass implements Generatable {
   constructor(
-    protected readonly dmmf: DMMFClass,
+    protected readonly dmmf: DMMFHelper,
     protected readonly internalDatasources: InternalDatasource[],
     protected readonly outputDir: string,
     protected readonly browser?: boolean,
@@ -122,9 +146,7 @@ export class PrismaClientClass implements Generatable {
  * \`\`\`
  * const prisma = new PrismaClient()
  * // Fetch zero or more ${capitalize(example.plural)}
- * const ${lowerCase(example.plural)} = await prisma.${lowerCase(
-      example.model,
-    )}.findMany()
+ * const ${lowerCase(example.plural)} = await prisma.${lowerCase(example.model)}.findMany()
  * \`\`\`
  *
  * 
@@ -179,18 +201,22 @@ export class PrismaClient<
   /**
    * Disconnect from the database
    */
-  $disconnect(): Promise<any>;
+  $disconnect(): Promise<void>;
 
   /**
    * Add a middleware
    */
   $use(cb: Prisma.Middleware): void
+
 ${[
   executeRawDefinition.bind(this)(),
   queryRawDefinition.bind(this)(),
   batchingTransactionDefinition.bind(this)(),
   interactiveTransactionDefinition.bind(this)(),
-].join('\n')}
+  runCommandRawDefinition.bind(this)(),
+]
+  .join('\n')
+  .trim()}
 
     ${indent(
       dmmf.mappings.modelOperations
@@ -199,9 +225,7 @@ ${[
           const methodName = lowerCase(m.model)
           return `\
 /**
- * \`prisma.${methodName}\`: Exposes CRUD operations for the **${
-            m.model
-          }** model.
+ * \`prisma.${methodName}\`: Exposes CRUD operations for the **${m.model}** model.
   * Example usage:
   * \`\`\`ts
   * // Fetch zero or more ${capitalize(m.plural)}
@@ -231,7 +255,7 @@ export type HasReject<
   ? IsReject<LocalRejectSettings>
   : GlobalRejectSettings extends RejectPerOperation
   ? Action extends keyof GlobalRejectSettings
-    ? GlobalRejectSettings[Action] extends boolean
+    ? GlobalRejectSettings[Action] extends RejectOnNotFound
       ? IsReject<GlobalRejectSettings[Action]>
       : GlobalRejectSettings[Action] extends RejectPerModel
       ? Model extends keyof GlobalRejectSettings[Action]
@@ -332,6 +356,7 @@ export type PrismaAction =
   | 'queryRaw'
   | 'aggregate'
   | 'count'
+  | 'runCommandRaw'
 
 /**
  * These options are being passed in to the middleware as "params"

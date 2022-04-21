@@ -1,16 +1,9 @@
-process.env.GITHUB_ACTIONS = '1'
-
+import { jestConsoleContext, jestContext } from '@prisma/sdk'
 import fs from 'fs-jetpack'
-import { MigrateDeploy } from '../commands/MigrateDeploy'
-import { consoleContext, Context } from './__helpers__/context'
-import { tearDownMysql } from '../utils/setupMysql'
-import {
-  SetupParams,
-  setupPostgres,
-  tearDownPostgres,
-} from '../utils/setupPostgres'
 
-const ctx = Context.new().add(consoleContext()).assemble()
+import { MigrateDeploy } from '../commands/MigrateDeploy'
+
+const ctx = jestContext.new().add(jestConsoleContext()).assemble()
 
 describe('common', () => {
   it('should fail if no schema file', async () => {
@@ -33,8 +26,8 @@ describe('common', () => {
     ctx.fixture('empty')
     const result = MigrateDeploy.new().parse(['--early-access-feature'])
     await expect(result).rejects.toThrowErrorMatchingInlineSnapshot(`
-            Prisma Migrate was in Early Access and is now in Preview.
-            Replace the --early-access-feature flag with --preview-feature.
+            Prisma Migrate was in Early Access and is now Generally Available.
+            Remove the --early-access-feature flag.
           `)
   })
 })
@@ -43,18 +36,16 @@ describe('sqlite', () => {
   it('no unapplied migrations', async () => {
     ctx.fixture('schema-only-sqlite')
     const result = MigrateDeploy.new().parse(['--schema=./prisma/empty.prisma'])
-    await expect(result).resolves.toMatchInlineSnapshot(
-      `No pending migrations to apply.`,
-    )
+    await expect(result).resolves.toMatchInlineSnapshot(`No pending migrations to apply.`)
 
-    expect(ctx.mocked['console.info'].mock.calls.join('\n'))
-      .toMatchInlineSnapshot(`
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`
       Prisma schema loaded from prisma/empty.prisma
       Datasource "my_db": SQLite database "dev.db" at "file:dev.db"
 
       SQLite database dev.db created at file:dev.db
 
       No migration found in prisma/migrations
+
 
     `)
     expect(ctx.mocked['console.log'].mock.calls).toMatchSnapshot()
@@ -78,12 +69,9 @@ describe('sqlite', () => {
 
     // Second time should do nothing (already applied)
     const resultBis = MigrateDeploy.new().parse([])
-    await expect(resultBis).resolves.toMatchInlineSnapshot(
-      `No pending migrations to apply.`,
-    )
+    await expect(resultBis).resolves.toMatchInlineSnapshot(`No pending migrations to apply.`)
 
-    expect(ctx.mocked['console.info'].mock.calls.join('\n'))
-      .toMatchInlineSnapshot(`
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`
       Prisma schema loaded from prisma/schema.prisma
       Datasource "my_db": SQLite database "dev.db" at "file:dev.db"
 
@@ -91,10 +79,13 @@ describe('sqlite', () => {
 
       1 migration found in prisma/migrations
 
+      Applying migration \`20201231000000_init\`
+
       Prisma schema loaded from prisma/schema.prisma
       Datasource "my_db": SQLite database "dev.db" at "file:dev.db"
 
       1 migration found in prisma/migrations
+
 
     `)
     expect(ctx.mocked['console.log'].mock.calls).toMatchSnapshot()
@@ -108,16 +99,16 @@ describe('sqlite', () => {
     await expect(result).rejects.toMatchInlineSnapshot(`
             P3005
 
-            The database schema for \`dev.db\` is not empty. Read more about how to baseline an existing production database: https://pris.ly/d/migrate-baseline
+            The database schema is not empty. Read more about how to baseline an existing production database: https://pris.ly/d/migrate-baseline
 
           `)
 
-    expect(ctx.mocked['console.info'].mock.calls.join('\n'))
-      .toMatchInlineSnapshot(`
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`
       Prisma schema loaded from prisma/schema.prisma
       Datasource "my_db": SQLite database "dev.db" at "file:dev.db"
 
       1 migration found in prisma/migrations
+
     `)
     expect(ctx.mocked['console.log'].mock.calls).toMatchSnapshot()
     expect(ctx.mocked['console.error'].mock.calls).toMatchSnapshot()

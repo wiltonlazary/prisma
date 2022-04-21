@@ -1,12 +1,16 @@
-import getStream = require('get-stream')
-import { Client, Pool } from 'undici'
-import { URL } from 'url'
+import getStream from 'get-stream'
+import type { Dispatcher, Pool } from 'undici'
+import type { URL } from 'url'
 
 export type Result<R> = {
-  statusCode: Client.ResponseData['statusCode']
-  headers: Client.ResponseData['headers']
+  statusCode: Dispatcher.ResponseData['statusCode']
+  headers: Dispatcher.ResponseData['headers']
   data: R
 }
+
+// because undici lazily loads llhttp wasm which bloats the memory
+// TODO: hopefully replace with `import` but that causes segfaults
+const undici = () => require('undici')
 
 /**
  * Assertion function to make sure that we have a pool
@@ -28,15 +32,12 @@ export class Connection {
 
   /**
    * Wrapper to handle HTTP error codes. HTTP errors don't trigger any
-   * execptions because it is optional to handle error status codes.
+   * exceptions because it is optional to handle error status codes.
    * @param response to handle
    * @param handler to execute
    * @returns
    */
-  static async onHttpError<R, HR>(
-    response: Promise<Result<R>>,
-    handler: (result: Result<R>) => HR,
-  ) {
+  static async onHttpError<R, HR>(response: Promise<Result<R>>, handler: (result: Result<R>) => HR) {
     const _response = await response
 
     if (_response.statusCode >= 400) {
@@ -55,11 +56,11 @@ export class Connection {
   open(url: string | URL, options?: Pool.Options) {
     if (this._pool) return
 
-    this._pool = new Pool(url, {
-      connections: 100,
-      pipelining: 10,
+    this._pool = new (undici().Pool)(url, {
+      connections: 1000,
       keepAliveMaxTimeout: 600e3,
       headersTimeout: 0,
+      bodyTimeout: 0,
       ...options,
     })
   }
@@ -75,8 +76,8 @@ export class Connection {
   async raw<R>(
     method: 'POST' | 'GET',
     endpoint: string,
-    headers?: Client.DispatchOptions['headers'],
-    body?: Client.DispatchOptions['body'],
+    headers?: Dispatcher.DispatchOptions['headers'],
+    body?: Dispatcher.DispatchOptions['body'],
   ) {
     assertHasPool(this._pool)
 
@@ -87,8 +88,7 @@ export class Connection {
         'Content-Type': 'application/json',
         ...headers,
       },
-      body,
-      bodyTimeout: 0,
+      body: body,
     })
 
     const result: Result<R> = {
@@ -109,8 +109,8 @@ export class Connection {
    */
   post<R>(
     endpoint: string,
-    body?: Client.DispatchOptions['body'],
-    headers?: Client.DispatchOptions['headers'],
+    body?: Dispatcher.DispatchOptions['body'],
+    headers?: Dispatcher.DispatchOptions['headers'],
   ) {
     return this.raw<R>('POST', endpoint, headers, body)
   }
@@ -122,7 +122,7 @@ export class Connection {
    * @param headers
    * @returns
    */
-  get<R>(path: string, headers?: Client.DispatchOptions['headers']) {
+  get<R>(path: string, headers?: Dispatcher.DispatchOptions['headers']) {
     return this.raw<R>('GET', path, headers)
   }
 

@@ -20,8 +20,8 @@
 
 // @ts-ignore
 
-var stream = require('stream'),
-  util = require('util')
+import stream from 'stream'
+import util from 'util'
 
 // convinience API
 export default function byline(readStream, options?: any) {
@@ -44,7 +44,7 @@ export function createLineStream(readStream, options) {
   if (!readStream.readable) {
     throw new Error('readStream must be readable')
   }
-  var ls = new LineStream(options)
+  const ls = new LineStream(options)
   readStream.pipe(ls)
   return ls
 }
@@ -71,7 +71,7 @@ function LineStream(this: any, options) {
     if (!this.encoding) {
       // but we can't do this for old-style streams
       if (src instanceof stream.Readable) {
-        this.encoding = src._readableState.encoding
+        this.encoding = (src as any)._readableState.encoding
       }
     }
   })
@@ -92,7 +92,7 @@ LineStream.prototype._transform = function (chunk, encoding, done) {
   }
   this._chunkEncoding = encoding
 
-  var lines = chunk.split(/\r\n|\r|\n/g)
+  const lines = chunk.split(/\r\n|\r|\n/g)
 
   // don't split CRLF which spans chunks
   if (this._lastChunkEndedWithCR && chunk[0] == '\n') {
@@ -112,7 +112,7 @@ LineStream.prototype._transform = function (chunk, encoding, done) {
 LineStream.prototype._pushBuffer = function (encoding, keep, done) {
   // always buffer the last (possibly partial) line
   while (this._lineBuffer.length > keep) {
-    var line = this._lineBuffer.shift()
+    const line = this._lineBuffer.shift()
     // skip empty lines
     if (this._keepEmptyLines || line.length > 0) {
       if (!this.push(this._reencode(line, encoding))) {

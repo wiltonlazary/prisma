@@ -27,12 +27,8 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/* tslint:disable */
-
 function isSpecificValue(val) {
-  return val instanceof Buffer || val instanceof Date || val instanceof RegExp
-    ? true
-    : false
+  return val instanceof Buffer || val instanceof Date || val instanceof RegExp ? true : false
 }
 
 function cloneSpecificValue(val) {
@@ -127,11 +123,7 @@ export const deepExtend = function (target, ...args) {
         continue
 
         // overwrite by new value if source isn't object or array
-      } else if (
-        typeof src !== 'object' ||
-        src === null ||
-        Array.isArray(src)
-      ) {
+      } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
         target[key] = deepExtend({}, val)
         continue
 

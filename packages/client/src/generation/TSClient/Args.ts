@@ -1,9 +1,11 @@
 import indent from 'indent-string'
+
 import { DMMF } from '../../runtime/dmmf-types'
 import { getIncludeName, getModelArgName, getSelectName } from '../utils'
 import { TAB_SIZE } from './constants'
-import { Generatable } from './Generatable'
-import { ExportCollector, getArgFieldJSDoc } from './helpers'
+import type { Generatable } from './Generatable'
+import type { ExportCollector } from './helpers'
+import { getArgFieldJSDoc } from './helpers'
 import { InputField } from './Input'
 
 export class ArgsType implements Generatable {
@@ -44,9 +46,7 @@ export class ArgsType implements Generatable {
       },
     ]
 
-    const hasRelationField = this.type.fields.some(
-      (f) => f.outputType.location === 'outputObjectTypes',
-    )
+    const hasRelationField = this.type.fields.some((f) => f.outputType.location === 'outputObjectTypes')
 
     if (hasRelationField) {
       const includeName = getIncludeName(name)
@@ -70,9 +70,7 @@ export class ArgsType implements Generatable {
         comment: `Choose, which related nodes to fetch as well.`,
       })
     }
-    const addRejectOnNotFound =
-      action === DMMF.ModelAction.findUnique ||
-      action === DMMF.ModelAction.findFirst
+    const addRejectOnNotFound = action === DMMF.ModelAction.findUnique || action === DMMF.ModelAction.findFirst
     if (addRejectOnNotFound) {
       bothArgsOptional.push({
         name: 'rejectOnNotFound',
@@ -98,10 +96,7 @@ export class ArgsType implements Generatable {
  * ${name} ${action ? action : 'without action'}
  */
 export type ${modelArgName} = {
-${indent(
-  bothArgsOptional.map((arg) => new InputField(arg).toTS()).join('\n'),
-  TAB_SIZE,
-)}
+${indent(bothArgsOptional.map((arg) => new InputField(arg).toTS()).join('\n'), TAB_SIZE)}
 }
 `
   }
@@ -110,13 +105,17 @@ ${indent(
 export class MinimalArgsType implements Generatable {
   constructor(
     protected readonly args: DMMF.SchemaArg[],
-    protected readonly model: DMMF.Model,
+    protected readonly type: DMMF.OutputType,
     protected readonly action?: DMMF.ModelAction,
     protected readonly collector?: ExportCollector,
   ) {}
   public toTS(): string {
     const { action, args } = this
-    const { name } = this.model
+    const { name } = this.type
+
+    for (const arg of args) {
+      arg.comment = getArgFieldJSDoc(this.type, action, arg)
+    }
 
     const typeName = getModelArgName(name, action)
 
@@ -127,7 +126,15 @@ export class MinimalArgsType implements Generatable {
  * ${name} ${action ? action : 'without action'}
  */
 export type ${typeName} = {
-${indent(args.map((arg) => new InputField(arg).toTS()).join('\n'), TAB_SIZE)}
+${indent(
+  args
+    .map((arg) => {
+      const noEnumerable = arg.inputTypes.some((input) => input.type === 'Json') && arg.name === 'pipeline'
+      return new InputField(arg, false, noEnumerable).toTS()
+    })
+    .join('\n'),
+  TAB_SIZE,
+)}
 }
 `
   }

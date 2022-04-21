@@ -1,7 +1,9 @@
 import path from 'path'
+
 import { getTestClient } from '../../../../utils/getTestClient'
 import { tearDownPostgres } from '../../../../utils/setupPostgres'
 import { migrateDb } from '../../__helpers__/migrateDb'
+
 describe('createMany(postgres)', () => {
   beforeAll(async () => {
     process.env.TEST_POSTGRES_URI += '-createMany'
@@ -84,12 +86,7 @@ describe('createMany(postgres)', () => {
         email: 'test@2.com',
         posts: {
           createMany: {
-            data: [
-              { title: '1' },
-              { title: '2' },
-              { title: '3' },
-              { title: '4' },
-            ],
+            data: [{ title: '1' }, { title: '2' }, { title: '3' }, { title: '4' }],
           },
         },
       },

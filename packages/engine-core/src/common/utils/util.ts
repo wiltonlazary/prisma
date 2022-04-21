@@ -1,11 +1,11 @@
-import fs from 'fs'
-import { Platform } from '@prisma/get-platform'
-import { BinaryTargetsEnvValue } from '@prisma/generator-helper'
-import terminalLink from 'terminal-link'
-import newGithubIssueUrl from 'new-github-issue-url'
-import chalk from 'chalk'
 import Debug from '@prisma/debug'
+import type { BinaryTargetsEnvValue } from '@prisma/generator-helper'
+import type { Platform } from '@prisma/get-platform'
+import chalk from 'chalk'
 import crypto from 'crypto'
+import fs from 'fs'
+import newGithubIssueUrl from 'new-github-issue-url'
+import terminalLink from 'terminal-link'
 
 const debug = Debug('plusX')
 
@@ -21,9 +21,7 @@ export function plusX(file): void {
   fs.chmodSync(file, base8)
 }
 
-function transformPlatformToEnvValue(
-  platform: Platform | string,
-): BinaryTargetsEnvValue {
+function transformPlatformToEnvValue(platform: Platform | string): BinaryTargetsEnvValue {
   return { fromEnvVar: null, value: platform }
 }
 

@@ -3,14 +3,27 @@ import { BinaryType } from '@prisma/fetch-engine'
 import { getPlatform } from '@prisma/get-platform'
 import path from 'path'
 import stripAnsi from 'strip-ansi'
-import { getGenerators } from '../../getGenerators'
-import { omit } from '../../omit'
-import { pick } from '../../pick'
+
+import { getGenerators } from '../../get-generators/getGenerators'
 import { resolveBinary } from '../../resolveBinary'
+import { jestConsoleContext, jestContext } from '../../utils/jestContext'
+import { omit } from '../../utils/omit'
+import { pick } from '../../utils/pick'
 
-jest.setTimeout(20000)
+const ctx = jestContext.new().add(jestConsoleContext()).assemble()
 
-const generatorPath = path.join(__dirname, 'generator')
+if (process.env.CI) {
+  // 20s is often not enough on CI, especially on macOS.
+  jest.setTimeout(60_000)
+} else {
+  jest.setTimeout(20_000)
+}
+
+let generatorPath = path.join(__dirname, 'generator')
+
+if (process.platform === 'win32') {
+  generatorPath += '.cmd'
+}
 
 describe('getGenerators', () => {
   test('basic', async () => {
@@ -42,13 +55,7 @@ describe('getGenerators', () => {
       ]
     `)
 
-    expect(
-      pick(generators[0].options!, [
-        'datamodel',
-        'datasources',
-        'otherGenerators',
-      ]),
-    ).toMatchInlineSnapshot(`
+    expect(pick(generators[0].options!, ['datamodel', 'datasources', 'otherGenerators'])).toMatchInlineSnapshot(`
       Object {
         "datamodel": "datasource db {
         provider = \\"sqlite\\"
@@ -80,8 +87,7 @@ describe('getGenerators', () => {
       }
     `)
 
-    expect(omit(generators[0].options!.generator, ['output']))
-      .toMatchInlineSnapshot(`
+    expect(omit(generators[0].options!.generator, ['output'])).toMatchInlineSnapshot(`
       Object {
         "binaryTargets": Array [
           Object {
@@ -111,10 +117,7 @@ describe('getGenerators', () => {
     }
 
     const generators = await getGenerators({
-      schemaPath: path.join(
-        __dirname,
-        'valid-minimal-schema-binaryTargets.prisma',
-      ),
+      schemaPath: path.join(__dirname, 'valid-minimal-schema-binaryTargets.prisma'),
       providerAliases: aliases,
     })
 
@@ -134,13 +137,7 @@ describe('getGenerators', () => {
       ]
     `)
 
-    expect(
-      pick(generators[0].options!, [
-        'datamodel',
-        'datasources',
-        'otherGenerators',
-      ]),
-    ).toMatchInlineSnapshot(`
+    expect(pick(generators[0].options!, ['datamodel', 'datasources', 'otherGenerators'])).toMatchInlineSnapshot(`
       Object {
         "datamodel": "datasource db {
         provider = \\"sqlite\\"
@@ -191,6 +188,11 @@ describe('getGenerators', () => {
       }
     `)
 
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+
     generators.forEach((g) => g.stop())
   })
 
@@ -205,10 +207,7 @@ describe('getGenerators', () => {
     }
 
     const generators = await getGenerators({
-      schemaPath: path.join(
-        __dirname,
-        'valid-minimal-schema-binaryTargets-env-var.prisma',
-      ),
+      schemaPath: path.join(__dirname, 'valid-minimal-schema-binaryTargets-env-var.prisma'),
       providerAliases: aliases,
     })
 
@@ -228,13 +227,7 @@ describe('getGenerators', () => {
       ]
     `)
 
-    expect(
-      pick(generators[0].options!, [
-        'datamodel',
-        'datasources',
-        'otherGenerators',
-      ]),
-    ).toMatchInlineSnapshot(`
+    expect(pick(generators[0].options!, ['datamodel', 'datasources', 'otherGenerators'])).toMatchInlineSnapshot(`
       Object {
         "datamodel": "datasource db {
         provider = \\"sqlite\\"
@@ -271,9 +264,7 @@ describe('getGenerators', () => {
 
     expect(generator.binaryTargets).toHaveLength(1)
     expect(generator.binaryTargets[0].value).toEqual(platform)
-    expect(generator.binaryTargets[0].fromEnvVar).toEqual(
-      'BINARY_TARGETS_ENV_VAR_TEST',
-    )
+    expect(generator.binaryTargets[0].fromEnvVar).toEqual('BINARY_TARGETS_ENV_VAR_TEST')
 
     expect(omit(generator, ['binaryTargets'])).toMatchInlineSnapshot(`
       Object {
@@ -286,6 +277,11 @@ describe('getGenerators', () => {
         },
       }
     `)
+
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
 
     generators.forEach((g) => g.stop())
   })
@@ -301,36 +297,27 @@ describe('getGenerators', () => {
     }
 
     const generators = await getGenerators({
-      schemaPath: path.join(
-        __dirname,
-        'valid-minimal-schema-binaryTargets-env-var.prisma',
-      ),
+      schemaPath: path.join(__dirname, 'valid-minimal-schema-binaryTargets-env-var.prisma'),
       providerAliases: aliases,
     })
 
     expect(generators.map((g) => g.manifest)).toMatchInlineSnapshot(`
-              Array [
-                Object {
-                  "defaultOutput": "default-output",
-                  "denylist": Array [
-                    "SomeForbiddenType",
-                  ],
-                  "prettyName": "This is a pretty pretty name",
-                  "requiresEngines": Array [
-                    "queryEngine",
-                    "migrationEngine",
-                  ],
-                },
-              ]
-          `)
+      Array [
+        Object {
+          "defaultOutput": "default-output",
+          "denylist": Array [
+            "SomeForbiddenType",
+          ],
+          "prettyName": "This is a pretty pretty name",
+          "requiresEngines": Array [
+            "queryEngine",
+            "migrationEngine",
+          ],
+        },
+      ]
+    `)
 
-    expect(
-      pick(generators[0].options!, [
-        'datamodel',
-        'datasources',
-        'otherGenerators',
-      ]),
-    ).toMatchInlineSnapshot(`
+    expect(pick(generators[0].options!, ['datamodel', 'datasources', 'otherGenerators'])).toMatchInlineSnapshot(`
       Object {
         "datamodel": "datasource db {
         provider = \\"sqlite\\"
@@ -367,28 +354,30 @@ describe('getGenerators', () => {
 
     expect(generator.binaryTargets).toHaveLength(1)
     expect(generator.binaryTargets[0].value).toEqual(platform)
-    expect(generator.binaryTargets[0].fromEnvVar).toEqual(
-      'BINARY_TARGETS_ENV_VAR_TEST',
-    )
+    expect(generator.binaryTargets[0].fromEnvVar).toEqual('BINARY_TARGETS_ENV_VAR_TEST')
 
     expect(omit(generator, ['binaryTargets'])).toMatchInlineSnapshot(`
-              Object {
-                "config": Object {},
-                "name": "gen_env",
-                "previewFeatures": Array [],
-                "provider": Object {
-                  "fromEnvVar": null,
-                  "value": "predefined-generator",
-                },
-              }
-          `)
+      Object {
+        "config": Object {},
+        "name": "gen_env",
+        "previewFeatures": Array [],
+        "provider": Object {
+          "fromEnvVar": null,
+          "value": "predefined-generator",
+        },
+      }
+    `)
+
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
 
     generators.forEach((g) => g.stop())
   })
 
   it('basic - binaryTargets as env var - darwin, windows, debian', async () => {
-    process.env.BINARY_TARGETS_ENV_VAR_TEST =
-      '["darwin", "windows", "debian-openssl-1.1.x"]'
+    process.env.BINARY_TARGETS_ENV_VAR_TEST = '["darwin", "windows", "debian-openssl-1.1.x"]'
 
     const aliases = {
       'predefined-generator': {
@@ -398,36 +387,27 @@ describe('getGenerators', () => {
     }
 
     const generators = await getGenerators({
-      schemaPath: path.join(
-        __dirname,
-        'valid-minimal-schema-binaryTargets-env-var.prisma',
-      ),
+      schemaPath: path.join(__dirname, 'valid-minimal-schema-binaryTargets-env-var.prisma'),
       providerAliases: aliases,
     })
 
     expect(generators.map((g) => g.manifest)).toMatchInlineSnapshot(`
-              Array [
-                Object {
-                  "defaultOutput": "default-output",
-                  "denylist": Array [
-                    "SomeForbiddenType",
-                  ],
-                  "prettyName": "This is a pretty pretty name",
-                  "requiresEngines": Array [
-                    "queryEngine",
-                    "migrationEngine",
-                  ],
-                },
-              ]
-          `)
+      Array [
+        Object {
+          "defaultOutput": "default-output",
+          "denylist": Array [
+            "SomeForbiddenType",
+          ],
+          "prettyName": "This is a pretty pretty name",
+          "requiresEngines": Array [
+            "queryEngine",
+            "migrationEngine",
+          ],
+        },
+      ]
+    `)
 
-    expect(
-      pick(generators[0].options!, [
-        'datamodel',
-        'datasources',
-        'otherGenerators',
-      ]),
-    ).toMatchInlineSnapshot(`
+    expect(pick(generators[0].options!, ['datamodel', 'datasources', 'otherGenerators'])).toMatchInlineSnapshot(`
       Object {
         "datamodel": "datasource db {
         provider = \\"sqlite\\"
@@ -459,32 +439,127 @@ describe('getGenerators', () => {
       }
     `)
 
-    expect(omit(generators[0].options!.generator, ['output']))
-      .toMatchInlineSnapshot(`
-              Object {
-                "binaryTargets": Array [
-                  Object {
-                    "fromEnvVar": "BINARY_TARGETS_ENV_VAR_TEST",
-                    "value": "darwin",
-                  },
-                  Object {
-                    "fromEnvVar": "BINARY_TARGETS_ENV_VAR_TEST",
-                    "value": "windows",
-                  },
-                  Object {
-                    "fromEnvVar": "BINARY_TARGETS_ENV_VAR_TEST",
-                    "value": "debian-openssl-1.1.x",
-                  },
-                ],
-                "config": Object {},
-                "name": "gen_env",
-                "previewFeatures": Array [],
-                "provider": Object {
-                  "fromEnvVar": null,
-                  "value": "predefined-generator",
-                },
-              }
-          `)
+    expect(omit(generators[0].options!.generator, ['output'])).toMatchInlineSnapshot(`
+      Object {
+        "binaryTargets": Array [
+          Object {
+            "fromEnvVar": "BINARY_TARGETS_ENV_VAR_TEST",
+            "value": "darwin",
+          },
+          Object {
+            "fromEnvVar": "BINARY_TARGETS_ENV_VAR_TEST",
+            "value": "windows",
+          },
+          Object {
+            "fromEnvVar": "BINARY_TARGETS_ENV_VAR_TEST",
+            "value": "debian-openssl-1.1.x",
+          },
+        ],
+        "config": Object {},
+        "name": "gen_env",
+        "previewFeatures": Array [],
+        "provider": Object {
+          "fromEnvVar": null,
+          "value": "predefined-generator",
+        },
+      }
+    `)
+
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+
+    generators.forEach((g) => g.stop())
+  })
+
+  it('basic - binaryTargets as env var - linux-musl (missing current platform)', async () => {
+    process.env.BINARY_TARGETS_ENV_VAR_TEST = '["linux-musl"]'
+
+    const aliases = {
+      'predefined-generator': {
+        generatorPath: generatorPath,
+        outputPath: __dirname,
+      },
+    }
+
+    const generators = await getGenerators({
+      schemaPath: path.join(__dirname, 'valid-minimal-schema-binaryTargets-env-var.prisma'),
+      providerAliases: aliases,
+    })
+
+    expect(generators.map((g) => g.manifest)).toMatchInlineSnapshot(`
+      Array [
+        Object {
+          "defaultOutput": "default-output",
+          "denylist": Array [
+            "SomeForbiddenType",
+          ],
+          "prettyName": "This is a pretty pretty name",
+          "requiresEngines": Array [
+            "queryEngine",
+            "migrationEngine",
+          ],
+        },
+      ]
+    `)
+
+    expect(pick(generators[0].options!, ['datamodel', 'datasources', 'otherGenerators'])).toMatchInlineSnapshot(`
+      Object {
+        "datamodel": "datasource db {
+        provider = \\"sqlite\\"
+        url      = \\"file:./dev.db\\"
+      }
+
+      generator gen_env {
+        provider      = \\"predefined-generator\\"
+        binaryTargets = env(\\"BINARY_TARGETS_ENV_VAR_TEST\\")
+      }
+
+      model User {
+        id   Int    @id
+        name String
+      }
+      ",
+        "datasources": Array [
+          Object {
+            "activeProvider": "sqlite",
+            "name": "db",
+            "provider": "sqlite",
+            "url": Object {
+              "fromEnvVar": null,
+              "value": "file:./dev.db",
+            },
+          },
+        ],
+        "otherGenerators": Array [],
+      }
+    `)
+
+    expect(omit(generators[0].options!.generator, ['output'])).toMatchInlineSnapshot(`
+      Object {
+        "binaryTargets": Array [
+          Object {
+            "fromEnvVar": "BINARY_TARGETS_ENV_VAR_TEST",
+            "value": "linux-musl",
+          },
+        ],
+        "config": Object {},
+        "name": "gen_env",
+        "previewFeatures": Array [],
+        "provider": Object {
+          "fromEnvVar": null,
+          "value": "predefined-generator",
+        },
+      }
+    `)
+
+    const consoleLog = stripAnsi(ctx.mocked['console.log'].mock.calls.join('\n'))
+    expect(consoleLog).toContain('Warning: Your current platform')
+    expect(consoleLog).toContain(`s not included in your generator's \`binaryTargets\` configuration`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
 
     generators.forEach((g) => g.stop())
   })
@@ -552,10 +627,15 @@ describe('getGenerators', () => {
         providerAliases: aliases,
       }),
     ).rejects.toThrow('Unknown')
+
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
   })
 
   test('fail if datasource is missing', async () => {
-    expect.assertions(1)
+    expect.assertions(5)
     const aliases = {
       'predefined-generator': {
         generatorPath: generatorPath,
@@ -584,10 +664,15 @@ describe('getGenerators', () => {
         "
       `)
     }
+
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
   })
 
   test('fail if no model(s) found - sqlite', async () => {
-    expect.assertions(1)
+    expect.assertions(5)
     const aliases = {
       'predefined-generator': {
         generatorPath: generatorPath,
@@ -617,10 +702,15 @@ describe('getGenerators', () => {
         "
       `)
     }
+
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
   })
 
   test('fail if no model(s) found - mongodb', async () => {
-    expect.assertions(1)
+    expect.assertions(5)
     const aliases = {
       'predefined-generator': {
         generatorPath: generatorPath,
@@ -630,10 +720,7 @@ describe('getGenerators', () => {
 
     try {
       await getGenerators({
-        schemaPath: path.join(
-          __dirname,
-          'missing-models-mongodb-schema.prisma',
-        ),
+        schemaPath: path.join(__dirname, 'missing-models-mongodb-schema.prisma'),
         providerAliases: aliases,
       })
     } catch (e) {
@@ -643,7 +730,7 @@ describe('getGenerators', () => {
         You can define a model like this:
 
         model User {
-          id    String  @id @default(dbgenerated()) @map(\\"_id\\") @db.ObjectId
+          id    String  @id @default(auto()) @map(\\"_id\\") @db.ObjectId
           email String  @unique
           name  String?
         }
@@ -653,5 +740,48 @@ describe('getGenerators', () => {
         "
       `)
     }
+
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+  })
+
+  test('fail if dataProxy and interactiveTransactions are used together - prisma-client-js - postgres', async () => {
+    expect.assertions(5)
+    const aliases = {
+      'predefined-generator': {
+        generatorPath: generatorPath,
+        outputPath: __dirname,
+      },
+    }
+
+    try {
+      await getGenerators({
+        schemaPath: path.join(__dirname, 'proxy-and-interactiveTransactions-client-js.prisma'),
+        providerAliases: aliases,
+        skipDownload: true,
+      })
+    } catch (e) {
+      expect(stripAnsi(e.message)).toMatchInlineSnapshot(`
+        "
+        The dataProxy and interactiveTransactions Preview Features can not be enabled at the same time.
+        Remove interactiveTransactions from previewFeatures, for example:
+
+        generator client {
+            provider = \\"prisma-client-js\\"
+            previewFeatures = [\\"dataProxy\\"]
+        }
+
+        More information in our documentation:
+        https://pris.ly/d/data-proxy
+        "
+      `)
+    }
+
+    expect(ctx.mocked['console.log'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.info'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.warn'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
+    expect(ctx.mocked['console.error'].mock.calls.join('\n')).toMatchInlineSnapshot(`""`)
   })
 })

@@ -1,10 +1,11 @@
 import chalk from 'chalk'
-import { highlightDatamodel } from '../highlight/highlight'
-import { link } from '../link'
 
-export const missingDatasource = `\nYou don't have any ${chalk.bold(
-  'datasource',
-)} defined in your ${chalk.bold('schema.prisma')}.
+import { highlightDatamodel } from '../highlight/highlight'
+import { link } from './link'
+
+export const missingDatasource = `\nYou don't have any ${chalk.bold('datasource')} defined in your ${chalk.bold(
+  'schema.prisma',
+)}.
 You can define a datasource like this:
 
 ${chalk.bold(

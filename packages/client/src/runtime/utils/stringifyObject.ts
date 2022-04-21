@@ -1,13 +1,10 @@
 'use strict'
 const isRegexp = require('is-regexp')
 const isObj = require('is-obj')
-const getOwnEnumPropSymbols =
-  require('get-own-enumerable-property-symbols').default
+const getOwnEnumPropSymbols = require('get-own-enumerable-property-symbols').default
 
 // Fork of https://github.com/yeoman/stringify-object/blob/master/index.js
 // with possibility to overwrite the whole key-value pair (options.transformLine)
-
-/* tslint:disable */
 
 const stringifyObject = (input, options?: any, pad?: any) => {
   const seen: any[] = []
@@ -48,10 +45,7 @@ const stringifyObject = (input, options?: any, pad?: any) => {
       }
 
       return string
-        .replace(
-          new RegExp(tokens.newLine + '|' + tokens.newLineOrSpace, 'g'),
-          '\n',
-        )
+        .replace(new RegExp(tokens.newLine + '|' + tokens.newLineOrSpace, 'g'), '\n')
         .replace(new RegExp(tokens.pad, 'g'), pad)
         .replace(new RegExp(tokens.indent, 'g'), pad + options.indent)
     }
@@ -92,15 +86,9 @@ const stringifyObject = (input, options?: any, pad?: any) => {
         tokens.newLine +
         input
           .map((el, i) => {
-            const eol =
-              input.length - 1 === i
-                ? tokens.newLine
-                : ',' + tokens.newLineOrSpace
+            const eol = input.length - 1 === i ? tokens.newLine : ',' + tokens.newLineOrSpace
 
-            let value = stringifyObject(el, options, pad + options.indent, [
-              ...path,
-              i,
-            ] as any)
+            let value = stringifyObject(el, options, pad + options.indent, [...path, i] as any)
             if (options.transformValue) {
               value = options.transformValue(input, i, value)
             }
@@ -134,23 +122,12 @@ const stringifyObject = (input, options?: any, pad?: any) => {
         tokens.newLine +
         objKeys
           .map((el, i) => {
-            const eol =
-              objKeys.length - 1 === i
-                ? tokens.newLine
-                : ',' + tokens.newLineOrSpace
+            const eol = objKeys.length - 1 === i ? tokens.newLine : ',' + tokens.newLineOrSpace
             const isSymbol = typeof el === 'symbol'
             const isClassic = !isSymbol && /^[a-z$_][a-z$_0-9]*$/i.test(el)
-            const key =
-              isSymbol || isClassic
-                ? el
-                : stringifyObject(el, options, undefined, [...path, el] as any)
+            const key = isSymbol || isClassic ? el : stringifyObject(el, options, undefined, [...path, el] as any)
 
-            let value = stringifyObject(
-              input[el],
-              options,
-              pad + options.indent,
-              [...path, el] as any,
-            )
+            let value = stringifyObject(input[el], options, pad + options.indent, [...path, el] as any)
             if (options.transformValue) {
               value = options.transformValue(input, el, value)
             }
@@ -181,9 +158,7 @@ const stringifyObject = (input, options?: any, pad?: any) => {
       return expandWhiteSpace(ret)
     }
 
-    input = String(input).replace(/[\r\n]/g, (x) =>
-      x === '\n' ? '\\n' : '\\r',
-    )
+    input = String(input).replace(/[\r\n]/g, (x) => (x === '\n' ? '\\n' : '\\r'))
 
     if (options.singleQuotes === false) {
       input = input.replace(/"/g, '\\"')

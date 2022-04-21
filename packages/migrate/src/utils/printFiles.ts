@@ -1,5 +1,6 @@
-import { FileMap } from '../types'
 import indent from 'indent-string'
+
+import type { FileMap } from '../types'
 import { printMigrationId } from './printMigrationId'
 
 export function printFiles(printPath: string, files: FileMap): string {
@@ -13,11 +14,7 @@ ${folders[0]}/
 ${indent(fileNames.map((f) => `└─ ${f}`).join('\n'), 4)}`
 }
 
-export function printFilesFromMigrationIds(
-  directory: string,
-  migrationIds: string[],
-  files: FileMap,
-): string {
+export function printFilesFromMigrationIds(directory: string, migrationIds: string[], files: FileMap): string {
   const fileNames = Object.keys(files)
 
   let message = `\

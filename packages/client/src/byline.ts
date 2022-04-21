@@ -20,12 +20,11 @@
 // IN THE SOFTWARE.
 
 // @ts-ignore
-/* tslint:disable */
 
-const stream = require('stream'),
-  util = require('util')
+import stream from 'stream'
+import util from 'util'
 
-// convinience API
+// convenience API
 export default function byline(readStream, options?: any) {
   return module.exports.createStream(readStream, options)
 }
@@ -62,7 +61,7 @@ function LineStream(this: any, options) {
   options = options || {}
 
   // use objectMode to stop the output from being buffered
-  // which re-concatanates the lines, just without newlines.
+  // which re-concatenates the lines, just without newlines.
   this._readableState.objectMode = true
   this._lineBuffer = []
   this._keepEmptyLines = options.keepEmptyLines || false
@@ -73,7 +72,7 @@ function LineStream(this: any, options) {
     if (!this.encoding) {
       // but we can't do this for old-style streams
       if (src instanceof stream.Readable) {
-        this.encoding = src._readableState.encoding
+        this.encoding = (src as any)._readableState.encoding
       }
     }
   })

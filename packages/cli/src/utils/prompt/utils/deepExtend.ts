@@ -28,9 +28,7 @@
  */
 
 function isSpecificValue(val): boolean {
-  return val instanceof Buffer || val instanceof Date || val instanceof RegExp
-    ? true
-    : false
+  return val instanceof Buffer || val instanceof Date || val instanceof RegExp ? true : false
 }
 
 function cloneSpecificValue(val): RegExp | Buffer | Date {
@@ -73,7 +71,7 @@ function safeGetProperty(object, property): any {
 }
 
 /**
- * Extening object that entered in first argument.
+ * Extending object that entered in first argument.
  *
  * Returns extended object or false if have no target object or incorrect type.
  *
@@ -125,11 +123,7 @@ export const deepExtend = function (target, ...args): any {
         continue
 
         // overwrite by new value if source isn't object or array
-      } else if (
-        typeof src !== 'object' ||
-        src === null ||
-        Array.isArray(src)
-      ) {
+      } else if (typeof src !== 'object' || src === null || Array.isArray(src)) {
         target[key] = deepExtend({}, val)
         continue
 

@@ -1,6 +1,6 @@
-import { Command } from '@prisma/sdk'
-import * as checkpoint from 'checkpoint-client'
+import type { Command } from '@prisma/sdk'
 import { getCLIPathHash, getProjectHash } from '@prisma/sdk'
+import * as checkpoint from 'checkpoint-client'
 
 /**
  * $ prisma telemetry

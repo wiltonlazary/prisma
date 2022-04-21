@@ -1,6 +1,7 @@
 import indent from 'indent-string'
-import { Generatable } from './Generatable'
-import { InternalDatasource } from '../../runtime/utils/printDatasources'
+
+import type { InternalDatasource } from '../../runtime/utils/printDatasources'
+import type { Generatable } from './Generatable'
 
 export class Datasources implements Generatable {
   constructor(protected readonly internalDatasources: InternalDatasource[]) {}

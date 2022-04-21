@@ -1,8 +1,9 @@
-import fs from 'fs'
-import { generateInFolder } from '../src/utils/generateInFolder'
 import arg from 'arg'
 import chalk from 'chalk'
+import fs from 'fs'
 import path from 'path'
+
+import { generateInFolder } from '../src/utils/generateInFolder'
 
 async function main() {
   const args = arg({
@@ -13,9 +14,7 @@ async function main() {
   const projectDir = args._[0]
 
   if (!projectDir) {
-    throw new Error(
-      `Project dir missing. Usage: ts-node examples/generate.ts examples/accounts`,
-    )
+    throw new Error(`Project dir missing. Usage: ts-node examples/generate.ts examples/accounts`)
   }
 
   if (!fs.existsSync(projectDir)) {
@@ -25,9 +24,7 @@ async function main() {
   const useLocalRuntime = args['--skip-transpile']
 
   if (args['--built-runtime'] && !args['--skip-transpile']) {
-    throw new Error(
-      `Please either provide --skip-transpile or --skip-transpile and --built-runtime`,
-    )
+    throw new Error(`Please either provide --skip-transpile or --skip-transpile and --built-runtime`)
   }
 
   const time = await generateInFolder({
@@ -38,9 +35,9 @@ async function main() {
   })
 
   console.log(
-    `Generated Prisma Client ${chalk.underline(
-      useLocalRuntime ? 'with' : 'without',
-    )} local runtime in ${time.toFixed(3)}ms`,
+    `Generated Prisma Client ${chalk.underline(useLocalRuntime ? 'with' : 'without')} local runtime in ${time.toFixed(
+      3,
+    )}ms`,
   )
 }
 
